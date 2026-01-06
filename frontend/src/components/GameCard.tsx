@@ -79,18 +79,18 @@ export const GameCard = ({
           `}
         >
           {/* 1. Result Grid */}
-          <div className="absolute inset-0 p-6 bg-slate-100 flex flex-col">
-            <div className="flex justify-between items-center mb-4 opacity-50">
+          <div className="absolute inset-0 bg-slate-100 flex flex-col overflow-hidden">
+            <div className="flex justify-between items-center px-3 pt-2 pb-1 opacity-50 flex-shrink-0">
               <div className="flex items-center gap-1 text-xs font-bold text-slate-400">
-                <Ticket size={14} /> {selectedMode.name.toUpperCase()}
+                <Ticket size={12} /> {selectedMode.name.toUpperCase()}
               </div>
-              <div className="text-[10px] font-mono text-slate-400">
+              <div className="text-[9px] font-mono text-slate-400">
                 NO: {Math.random().toString().slice(2, 10)}
               </div>
             </div>
 
             <div
-              className={`flex-1 grid ${getGridClass(selectedMode.gridSize)} transition-all duration-500 content-center`}
+              className={`flex-1 grid ${getGridClass(selectedMode.gridSize)} gap-1 p-2 transition-all duration-500 items-center justify-center min-h-0`}
             >
               {gridSymbols.map((symbolData, idx) => {
                 const symbol = symbolData.icon;
@@ -125,16 +125,15 @@ export const GameCard = ({
                   <div
                     key={idx}
                     className={`
-                      flex items-center justify-center ${getSymbolSizeClass(selectedMode.gridSize)} rounded-xl border-2
-                      transition-all duration-700 relative overflow-hidden aspect-square
+                      flex items-center justify-center ${getSymbolSizeClass(selectedMode.gridSize)} rounded-lg border-2
+                      transition-all duration-700 relative overflow-hidden aspect-square min-w-0 min-h-0
                       ${isWinningCell
-                        ? `bg-white ${getWinningBorderColor()} shadow-xl z-10 ring-2 ring-offset-2 ${getWinningRingColor()}`
+                        ? `bg-white ${getWinningBorderColor()} shadow-xl z-10 ring-2 ring-offset-1 ${getWinningRingColor()}`
                         : 'bg-white border-slate-300 shadow-sm'}
                     `}
                   >
                     <div
-                      className={`flex items-center justify-center filter drop-shadow-xl transform transition-transform duration-500 ${isWinningCell ? 'scale-110' : ''} opacity-100`}
-                      style={{ minHeight: '70px', minWidth: '70px' }}
+                      className={`flex items-center justify-center filter drop-shadow-xl transform transition-transform duration-500 ${isWinningCell ? 'scale-105' : ''} opacity-100 w-full h-full p-1`}
                     >
                       <div className="w-full h-full flex items-center justify-center">
                         {symbol}
@@ -255,18 +254,22 @@ export const GameCard = ({
       {gameState === 'REVEALED' &&
         (winData?.isWin ? (
           <div className="mt-4 w-full max-w-2xl">
-            <div className="bg-white/95 backdrop-blur-xl py-3 px-4 rounded-2xl shadow-2xl border-4 border-yellow-400 transform animate-pop-in flex flex-row items-center gap-4 relative">
-              {/* Close button */}
+            <div className={`bg-white/95 backdrop-blur-xl py-3 px-4 rounded-2xl shadow-2xl border-4 transform animate-pop-in flex flex-row items-center gap-4 relative ${
+              selectedMode.id === 'STANDARD' ? 'border-cyan-500' : 
+              selectedMode.id === 'GOLD' ? 'border-yellow-500' : 
+              'border-purple-500'
+            }`}>
+              {/* Close button - moved to left top */}
               <button
                 onClick={onResetGame}
-                className="absolute top-2 right-2 p-1.5 rounded-full bg-slate-200/80 hover:bg-slate-300/80 transition-colors"
+                className="absolute top-2 left-2 p-1.5 rounded-full bg-slate-200/80 hover:bg-slate-300/80 transition-colors z-10"
                 aria-label="Close"
               >
                 <X size={14} className="text-slate-600" />
               </button>
 
               {/* Left side - Trophy and title */}
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 ml-8">
                 <Trophy className="text-yellow-500 w-8 h-8 filter drop-shadow-lg flex-shrink-0" />
                 <div>
                   <h2 className="text-lg font-black text-slate-800 tracking-tight uppercase">
@@ -290,29 +293,33 @@ export const GameCard = ({
                 ))}
               </div>
 
-              {/* Right side - Continue button */}
+              {/* Right side - Buy Again button */}
               <button
-                onClick={onResetGame}
-                className={`bg-gradient-to-r ${selectedMode.gradient} text-white font-bold py-2 px-5 rounded-xl shadow-lg hover:scale-105 transition-transform flex items-center gap-2 text-sm flex-shrink-0`}
+                onClick={onBuyTicket}
+                className={`bg-gradient-to-r ${selectedMode.gradient} text-white font-bold py-2 px-5 rounded-xl shadow-lg hover:scale-105 transition-transform flex items-center gap-2 text-sm flex-shrink-0 mr-2`}
               >
-                Continue
+                Buy Again
               </button>
             </div>
           </div>
         ) : (
           <div className="mt-4 w-full max-w-2xl">
-            <div className="bg-[#18181b]/95 backdrop-blur-xl py-3 px-4 rounded-2xl shadow-2xl border border-white/10 transform animate-pop-in flex flex-row items-center gap-4 relative">
-              {/* Close button */}
+            <div className={`bg-[#18181b]/95 backdrop-blur-xl py-3 px-4 rounded-2xl shadow-2xl border-2 transform animate-pop-in flex flex-row items-center gap-4 relative ${
+              selectedMode.id === 'STANDARD' ? 'border-cyan-500/50' : 
+              selectedMode.id === 'GOLD' ? 'border-yellow-500/50' : 
+              'border-purple-500/50'
+            }`}>
+              {/* Close button - moved to left top */}
               <button
                 onClick={onResetGame}
-                className="absolute top-2 right-2 p-1.5 rounded-full bg-slate-700/80 hover:bg-slate-600/80 transition-colors"
+                className="absolute top-2 left-2 p-1.5 rounded-full bg-slate-700/80 hover:bg-slate-600/80 transition-colors z-10"
                 aria-label="Close"
               >
                 <X size={14} className="text-white" />
               </button>
 
               {/* Left side - Icon and text */}
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 ml-8">
                 <Frown className="text-slate-500 w-8 h-8 flex-shrink-0" />
                 <div>
                   <h2 className="text-base font-bold text-white">Unlucky Round</h2>
@@ -320,14 +327,13 @@ export const GameCard = ({
                 </div>
               </div>
 
-              {/* Right side - Try Again button */}
+              {/* Right side - Buy Again button */}
               <div className="flex-1"></div>
               <button
-                onClick={onResetGame}
-                className={`bg-gradient-to-r ${selectedMode.gradient} text-white font-bold py-2 px-5 rounded-xl shadow-lg hover:scale-105 transition-transform flex items-center gap-2 text-sm flex-shrink-0`}
+                onClick={onBuyTicket}
+                className={`bg-gradient-to-r ${selectedMode.gradient} text-white font-bold py-2 px-5 rounded-xl shadow-lg hover:scale-105 transition-transform flex items-center gap-2 text-sm flex-shrink-0 mr-2`}
               >
-                <RotateCcw size={14} />
-                Try Again
+                Buy Again
               </button>
             </div>
           </div>

@@ -3,11 +3,11 @@ import { GameMode } from '@/types/game';
 export const getGridClass = (gridSize: number): string => {
   switch (gridSize) {
     case 4:
-      return 'grid-cols-4 gap-2';
+      return 'grid-cols-4';
     case 5:
-      return 'grid-cols-5 gap-1.5';
+      return 'grid-cols-5';
     default:
-      return 'grid-cols-3 gap-3';
+      return 'grid-cols-3';
   }
 };
 

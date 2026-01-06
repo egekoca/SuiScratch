@@ -5,6 +5,7 @@ import { PayoutTable } from '@/components/PayoutTable';
 import { RecentWinners } from '@/components/RecentWinners';
 import { Confetti } from '@/components/Confetti';
 import { useGame } from '@/hooks/useGame';
+import { useEffect, useRef, useState } from 'react';
 
 function App() {
   const {
@@ -18,6 +19,26 @@ function App() {
     resetGame,
     revealGame,
   } = useGame();
+  
+  const [showConfetti, setShowConfetti] = useState(false);
+  const prevWinAmountRef = useRef<number>(0);
+
+  useEffect(() => {
+    // Only show confetti when a new win is detected (win amount changes)
+    if (gameState === 'REVEALED' && winData?.isWin && winData.totalAmount !== prevWinAmountRef.current) {
+      setShowConfetti(true);
+      prevWinAmountRef.current = winData.totalAmount;
+      
+      // Hide confetti after 5 seconds
+      const timer = setTimeout(() => {
+        setShowConfetti(false);
+      }, 5000);
+      
+      return () => clearTimeout(timer);
+    } else if (gameState !== 'REVEALED' || !winData?.isWin) {
+      setShowConfetti(false);
+    }
+  }, [gameState, winData]);
 
   return (
     <div className="min-h-screen bg-[#09090b] text-white font-sans flex flex-col items-center overflow-x-hidden relative">
@@ -63,7 +84,7 @@ function App() {
 
           {/* Center Panel: Card */}
           <div className="flex flex-col items-center flex-1 w-full max-w-xl order-1 lg:order-2">
-            {gameState === 'REVEALED' && winData?.isWin && <Confetti />}
+            {showConfetti && <Confetti key={winData?.totalAmount} />}
 
             <GameCard
               selectedMode={selectedMode}
