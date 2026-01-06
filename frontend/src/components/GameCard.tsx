@@ -128,12 +128,12 @@ export const GameCard = ({
                       flex items-center justify-center ${getSymbolSizeClass(selectedMode.gridSize)} rounded-xl border-2
                       transition-all duration-700 relative overflow-hidden aspect-square
                       ${isWinningCell
-                        ? `bg-white ${getWinningBorderColor()} shadow-xl scale-110 z-10 ring-2 ring-offset-2 ${getWinningRingColor()}`
+                        ? `bg-white ${getWinningBorderColor()} shadow-xl z-10 ring-2 ring-offset-2 ${getWinningRingColor()}`
                         : 'bg-white border-slate-300 shadow-sm'}
                     `}
                   >
                     <div
-                      className={`flex items-center justify-center filter drop-shadow-xl transform transition-transform duration-500 ${isWinningCell ? 'scale-130 animate-bounce' : ''} opacity-100`}
+                      className={`flex items-center justify-center filter drop-shadow-xl transform transition-transform duration-500 ${isWinningCell ? 'scale-110' : ''} opacity-100`}
                       style={{ minHeight: '70px', minWidth: '70px' }}
                     >
                       <div className="w-full h-full flex items-center justify-center">
@@ -149,73 +149,6 @@ export const GameCard = ({
             </div>
           </div>
 
-          {/* 2. Win/Loss Screen */}
-          {gameState === 'REVEALED' &&
-            (winData?.isWin ? (
-              <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-auto p-4">
-                <div className="bg-white/90 backdrop-blur-xl w-full py-8 rounded-3xl shadow-2xl border-4 border-yellow-400 transform animate-pop-in flex flex-col items-center text-center relative">
-                  {/* Close button */}
-                  <button
-                    onClick={onResetGame}
-                    className="absolute top-4 right-4 p-2 rounded-full bg-slate-200/80 hover:bg-slate-300/80 transition-colors"
-                    aria-label="Close"
-                  >
-                    <X size={20} className="text-slate-600" />
-                  </button>
-
-                  <Trophy className="text-yellow-500 w-16 h-16 mb-2 filter drop-shadow-lg animate-bounce" />
-                  <h2 className="text-4xl font-black text-slate-800 tracking-tight mb-2 uppercase">
-                    You Won!
-                  </h2>
-
-                  <div className="flex flex-wrap gap-2 justify-center mb-4 px-4">
-                    {winData.details.map((detail, i) => (
-                      <span
-                        key={i}
-                        className="text-xs bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full font-bold border border-yellow-200"
-                      >
-                        {detail}
-                      </span>
-                    ))}
-                  </div>
-
-                  <div className="text-4xl font-black text-green-600 font-mono tracking-tighter mb-6">
-                    +{winData.totalAmount % 1 === 0 ? winData.totalAmount.toFixed(0) : winData.totalAmount.toFixed(2)} <span className="text-xl">SUI</span>
-                  </div>
-
-                  <button
-                    onClick={onResetGame}
-                    className={`bg-gradient-to-r ${selectedMode.gradient} text-white font-bold py-3 px-10 rounded-xl shadow-lg hover:scale-105 transition-transform flex items-center gap-2`}
-                  >
-                    Continue
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-auto p-6">
-                <div className="bg-[#18181b]/95 backdrop-blur-xl w-full py-8 rounded-3xl shadow-2xl border border-white/10 transform animate-pop-in flex flex-col items-center text-center relative">
-                  {/* Close button */}
-                  <button
-                    onClick={onResetGame}
-                    className="absolute top-4 right-4 p-2 rounded-full bg-slate-700/80 hover:bg-slate-600/80 transition-colors"
-                    aria-label="Close"
-                  >
-                    <X size={20} className="text-white" />
-                  </button>
-
-                  <Frown className="text-slate-500 w-16 h-16 mb-4" />
-                  <h2 className="text-2xl font-bold text-white mb-1">Unlucky Round</h2>
-                  <p className="text-slate-400 mb-6 text-sm">This ticket was empty.</p>
-                  <button
-                    onClick={onResetGame}
-                    className={`bg-gradient-to-r ${selectedMode.gradient} text-white font-bold py-3 px-10 rounded-xl shadow-lg hover:scale-105 transition-transform flex items-center gap-2`}
-                  >
-                    <RotateCcw size={18} />
-                    Try Again
-                  </button>
-                </div>
-              </div>
-            ))}
 
           {/* 3. Canvas (Scratchable Area) */}
           <canvas
@@ -317,6 +250,88 @@ export const GameCard = ({
           </div>
         </button>
       </div>
+
+      {/* Win/Loss Modal - Below the card */}
+      {gameState === 'REVEALED' &&
+        (winData?.isWin ? (
+          <div className="mt-4 w-full max-w-2xl">
+            <div className="bg-white/95 backdrop-blur-xl py-3 px-4 rounded-2xl shadow-2xl border-4 border-yellow-400 transform animate-pop-in flex flex-row items-center gap-4 relative">
+              {/* Close button */}
+              <button
+                onClick={onResetGame}
+                className="absolute top-2 right-2 p-1.5 rounded-full bg-slate-200/80 hover:bg-slate-300/80 transition-colors"
+                aria-label="Close"
+              >
+                <X size={14} className="text-slate-600" />
+              </button>
+
+              {/* Left side - Trophy and title */}
+              <div className="flex items-center gap-3">
+                <Trophy className="text-yellow-500 w-8 h-8 filter drop-shadow-lg flex-shrink-0" />
+                <div>
+                  <h2 className="text-lg font-black text-slate-800 tracking-tight uppercase">
+                    You Won!
+                  </h2>
+                  <div className="text-xl font-black text-green-600 font-mono tracking-tighter">
+                    +{winData.totalAmount % 1 === 0 ? winData.totalAmount.toFixed(0) : winData.totalAmount.toFixed(2)} <span className="text-sm">SUI</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Middle - Details */}
+              <div className="flex-1 flex flex-wrap gap-1.5 justify-center items-center max-h-20 overflow-y-auto">
+                {winData.details.map((detail, i) => (
+                  <span
+                    key={i}
+                    className="text-[10px] bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full font-bold border border-yellow-200"
+                  >
+                    {detail}
+                  </span>
+                ))}
+              </div>
+
+              {/* Right side - Continue button */}
+              <button
+                onClick={onResetGame}
+                className={`bg-gradient-to-r ${selectedMode.gradient} text-white font-bold py-2 px-5 rounded-xl shadow-lg hover:scale-105 transition-transform flex items-center gap-2 text-sm flex-shrink-0`}
+              >
+                Continue
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="mt-4 w-full max-w-2xl">
+            <div className="bg-[#18181b]/95 backdrop-blur-xl py-3 px-4 rounded-2xl shadow-2xl border border-white/10 transform animate-pop-in flex flex-row items-center gap-4 relative">
+              {/* Close button */}
+              <button
+                onClick={onResetGame}
+                className="absolute top-2 right-2 p-1.5 rounded-full bg-slate-700/80 hover:bg-slate-600/80 transition-colors"
+                aria-label="Close"
+              >
+                <X size={14} className="text-white" />
+              </button>
+
+              {/* Left side - Icon and text */}
+              <div className="flex items-center gap-3">
+                <Frown className="text-slate-500 w-8 h-8 flex-shrink-0" />
+                <div>
+                  <h2 className="text-base font-bold text-white">Unlucky Round</h2>
+                  <p className="text-slate-400 text-xs">This ticket was empty.</p>
+                </div>
+              </div>
+
+              {/* Right side - Try Again button */}
+              <div className="flex-1"></div>
+              <button
+                onClick={onResetGame}
+                className={`bg-gradient-to-r ${selectedMode.gradient} text-white font-bold py-2 px-5 rounded-xl shadow-lg hover:scale-105 transition-transform flex items-center gap-2 text-sm flex-shrink-0`}
+              >
+                <RotateCcw size={14} />
+                Try Again
+              </button>
+            </div>
+          </div>
+        ))}
     </div>
   );
 };

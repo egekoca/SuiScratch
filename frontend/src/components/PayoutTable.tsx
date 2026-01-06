@@ -17,7 +17,10 @@ export const PayoutTable = ({ selectedMode }: PayoutTableProps) => {
     symbolKeys = PLATINUM_SYMBOLS;
   }
   
-  const winningSymbols = symbolKeys.map(key => BASE_SYMBOLS[key]);
+  // Sort symbols by baseValue (highest to lowest)
+  const winningSymbols = symbolKeys
+    .map(key => BASE_SYMBOLS[key])
+    .sort((a, b) => b.baseValue - a.baseValue);
 
   return (
     <div className="bg-[#18181b]/80 backdrop-blur-md rounded-3xl border border-white/10 overflow-hidden shadow-2xl">
@@ -30,15 +33,15 @@ export const PayoutTable = ({ selectedMode }: PayoutTableProps) => {
 
       <div className="p-2 space-y-1">
         {winningSymbols.map((sym, idx) => {
-          // Get symbol-specific background color
+          // Get symbol-specific background color - each with distinct colors
           const getSymbolBgColor = () => {
-            if (sym.id === 'DIAMOND') return 'bg-purple-500/10 border-purple-500/30';
-            if (sym.id === 'DROP') return 'bg-blue-500/10 border-blue-500/30';
-            if (sym.id === 'ROCKET') return 'bg-orange-500/10 border-orange-500/30';
-            if (sym.id === 'COIN') return 'bg-yellow-500/10 border-yellow-500/30';
-            if (sym.id === 'STAR') return 'bg-pink-500/10 border-pink-500/30';
-            if (sym.id === 'CROWN') return 'bg-amber-500/10 border-amber-500/30';
-            if (sym.id === 'SPARKLES') return 'bg-cyan-500/10 border-cyan-500/30';
+            if (sym.id === 'DIAMOND') return 'bg-purple-600/20 border-purple-500/40';
+            if (sym.id === 'DROP') return 'bg-blue-600/20 border-blue-500/40';
+            if (sym.id === 'CROWN') return 'bg-amber-600/20 border-amber-500/40';
+            if (sym.id === 'SPARKLES') return 'bg-cyan-600/20 border-cyan-500/40';
+            if (sym.id === 'ROCKET') return 'bg-orange-600/20 border-orange-500/40';
+            if (sym.id === 'STAR') return 'bg-pink-600/20 border-pink-500/40';
+            if (sym.id === 'COIN') return 'bg-yellow-600/20 border-yellow-500/40';
             return 'bg-white/5 border-white/10';
           };
 
@@ -58,13 +61,19 @@ export const PayoutTable = ({ selectedMode }: PayoutTableProps) => {
                     {sym.label}
                   </span>
                   <span className="text-[10px] text-slate-500">
-                    {selectedMode.matchReq}x: {Math.round(sym.baseValue * selectedMode.price * (selectedMode.payouts[selectedMode.matchReq] || 0))} SUI
+                    {selectedMode.matchReq}x: {(() => {
+                      const val = sym.baseValue * selectedMode.price * (selectedMode.payouts[selectedMode.matchReq] || 0);
+                      return val % 1 === 0 ? val.toFixed(0) : val.toFixed(2);
+                    })()} SUI
                   </span>
                 </div>
               </div>
               <div className="text-right">
                 <span className="font-mono text-xs font-bold text-white opacity-80">
-                  Max {Math.round(sym.baseValue * selectedMode.price * Math.max(...Object.values(selectedMode.payouts)))} SUI
+                  Max {(() => {
+                    const val = sym.baseValue * selectedMode.price * Math.max(...Object.values(selectedMode.payouts));
+                    return val % 1 === 0 ? val.toFixed(0) : val.toFixed(2);
+                  })()} SUI
                 </span>
               </div>
             </div>
