@@ -25,25 +25,25 @@ export const BASE_SYMBOLS: Record<string, Symbol> = {
   DIAMOND: {
     id: 'DIAMOND',
     icon: createIcon(Gem, 'text-purple-500', 2.5, 'fill-purple-500'),
-    baseValue: 100,
+    baseValue: 1.0, // 100% of ticket price for 3 matches
     label: 'MEGA',
   },
   DROP: {
     id: 'DROP',
     icon: createIcon(Droplet, 'text-blue-500', 2.5, 'fill-blue-500'),
-    baseValue: 50,
+    baseValue: 0.5, // 50% of ticket price for 3 matches
     label: 'SUPER',
   },
   ROCKET: {
     id: 'ROCKET',
     icon: createIcon(Rocket, 'text-orange-500', 2.5, 'fill-orange-500'),
-    baseValue: 25,
+    baseValue: 0.2, // 20% of ticket price for 3 matches
     label: 'BIG',
   },
   COIN: {
     id: 'COIN',
     icon: createIcon(Coins, 'text-yellow-500', 2.5, 'fill-yellow-500'),
-    baseValue: 10,
+    baseValue: 0.08, // 8% of ticket price for 3 matches
     label: 'WIN',
   },
   GHOST: {

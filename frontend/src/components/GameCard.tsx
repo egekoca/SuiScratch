@@ -1,5 +1,5 @@
 import { useRef, useEffect } from 'react';
-import { Ticket, Star, RotateCcw, Trophy, Frown, Grid3x3, Grid, LayoutGrid, Coins } from 'lucide-react';
+import { Ticket, Star, RotateCcw, Trophy, Frown, Grid3x3, Grid, LayoutGrid, Coins, Sparkles } from 'lucide-react';
 import { GameMode, GameState, GridSymbol, WinData } from '@/types/game';
 import { getGridClass, getSymbolSizeClass } from '@/utils/gridUtils';
 import { initCanvas } from '@/utils/canvasUtils';
@@ -29,6 +29,21 @@ export const GameCard = ({
 
   const { isDrawing, lastPoint, startScratch, moveScratch, endScratch, handleMouseEnter } =
     useScratch(canvasRef, gameState, onReveal);
+
+  const handleInstantReveal = () => {
+    if (canvasRef.current && gameState === 'PLAYING') {
+      // Clear the canvas immediately
+      const ctx = canvasRef.current.getContext('2d');
+      if (ctx) {
+        ctx.save();
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+        ctx.restore();
+      }
+      // Trigger reveal
+      onReveal();
+    }
+  };
 
   useEffect(() => {
     if (gameState === 'PLAYING' && canvasRef.current) {
@@ -256,13 +271,27 @@ export const GameCard = ({
         </div>
       </div>
 
-      {/* Instructions */}
+      {/* Instructions and Scratch Now Button */}
       <div
-        className={`mt-6 text-center transition-opacity duration-500 ${gameState === 'PLAYING' ? 'opacity-100' : 'opacity-0'}`}
+        className={`mt-6 flex flex-col items-center gap-4 transition-opacity duration-500 ${gameState === 'PLAYING' ? 'opacity-100' : 'opacity-0'}`}
       >
         <p className="text-slate-400 text-sm font-medium animate-pulse">
           Scratch the card to reveal your fortune!
         </p>
+        <button
+          onClick={handleInstantReveal}
+          className={`
+            group relative px-6 py-3 rounded-xl font-bold text-sm overflow-hidden
+            bg-gradient-to-r ${selectedMode.gradient} shadow-lg
+            transition-all hover:scale-105 active:scale-95 flex items-center gap-2
+          `}
+        >
+          <div className="absolute inset-0 bg-white/20 group-hover:translate-x-full duration-1000 transition-transform skew-x-12 -ml-4"></div>
+          <div className="relative flex items-center justify-center gap-2">
+            <Sparkles size={16} className="text-white" />
+            <span className="text-white">Scratch Now</span>
+          </div>
+        </button>
       </div>
     </div>
   );

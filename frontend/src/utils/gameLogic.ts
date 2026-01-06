@@ -11,14 +11,22 @@ export const generateGrid = (selectedMode: GameMode): { grid: GridSymbol[]; winD
   else if (rand < 0.60) intendedScenario = 'COMBO';
 
   const winningKeys = WINNING_SYMBOL_KEYS;
-  // Only use winning symbols - no losing symbols
 
   if (intendedScenario !== 'LOSS') {
     const numWinningSymbols = intendedScenario === 'COMBO' ? 2 : 1;
     const chosenWinningKeys: string[] = [];
 
+    // Weighted selection: DIAMOND has lower chance (10%), others have equal chance (30% each)
+    const getWeightedSymbol = (): string => {
+      const rand = Math.random();
+      if (rand < 0.1) return 'DIAMOND'; // 10% chance
+      if (rand < 0.4) return 'DROP'; // 30% chance
+      if (rand < 0.7) return 'ROCKET'; // 30% chance
+      return 'COIN'; // 30% chance
+    };
+
     while (chosenWinningKeys.length < numWinningSymbols) {
-      const key = winningKeys[Math.floor(Math.random() * winningKeys.length)];
+      const key = getWeightedSymbol();
       if (!chosenWinningKeys.includes(key)) chosenWinningKeys.push(key);
     }
 
@@ -55,11 +63,61 @@ export const generateGrid = (selectedMode: GameMode): { grid: GridSymbol[]; winD
     });
   }
 
-  // Fill remaining cells with random winning symbols only
+  // Fill remaining cells with only winning symbols
+  // In LOSS scenario, ensure no symbol reaches matchReq (so no win occurs)
+  // In WIN scenarios, fill with random winning symbols (already have enough for a win)
   for (let i = 0; i < totalCells; i++) {
     if (!grid[i]) {
-      const randomKey = winningKeys[Math.floor(Math.random() * winningKeys.length)];
-      grid[i] = BASE_SYMBOLS[randomKey];
+      if (intendedScenario === 'LOSS') {
+        // Count current symbols to ensure we don't accidentally create a win
+        const currentCounts: Record<string, number> = {};
+        grid.forEach((sym) => {
+          if (sym && winningKeys.includes(sym.id)) {
+            currentCounts[sym.id] = (currentCounts[sym.id] || 0) + 1;
+          }
+        });
+
+        // Choose a winning symbol that won't reach matchReq
+        const availableSymbols = winningKeys.filter((key) => {
+          const currentCount = currentCounts[key] || 0;
+          return currentCount < selectedMode.matchReq - 1;
+        });
+
+        // If all symbols are at max (matchReq - 1), randomly choose any winning symbol
+        // This ensures variety but no win
+        // Use weighted selection (DIAMOND less likely)
+        const getWeightedSymbol = (): string => {
+          const rand = Math.random();
+          if (rand < 0.1) return 'DIAMOND'; // 10% chance
+          if (rand < 0.4) return 'DROP'; // 30% chance
+          if (rand < 0.7) return 'ROCKET'; // 30% chance
+          return 'COIN'; // 30% chance
+        };
+
+        if (availableSymbols.length === 0) {
+          const randomKey = getWeightedSymbol();
+          grid[i] = BASE_SYMBOLS[randomKey];
+        } else {
+          // Filter available symbols with weighted selection
+          const weightedAvailable = availableSymbols.flatMap((key) => {
+            if (key === 'DIAMOND') return [key]; // 1x weight
+            return [key, key, key]; // 3x weight for others
+          });
+          const randomKey = weightedAvailable[Math.floor(Math.random() * weightedAvailable.length)];
+          grid[i] = BASE_SYMBOLS[randomKey];
+        }
+      } else {
+        // For WIN scenarios, fill with weighted random winning symbols (DIAMOND less likely)
+        const getWeightedSymbol = (): string => {
+          const rand = Math.random();
+          if (rand < 0.1) return 'DIAMOND'; // 10% chance
+          if (rand < 0.4) return 'DROP'; // 30% chance
+          if (rand < 0.7) return 'ROCKET'; // 30% chance
+          return 'COIN'; // 30% chance
+        };
+        const randomWinningKey = getWeightedSymbol();
+        grid[i] = BASE_SYMBOLS[randomWinningKey];
+      }
     }
   }
 
@@ -91,7 +149,8 @@ export const generateGrid = (selectedMode: GameMode): { grid: GridSymbol[]; winD
 
     if (multiplier > 0) {
       const sym = BASE_SYMBOLS[id];
-      const winVal = Math.round(sym.baseValue * multiplier);
+      // baseValue is a percentage of ticket price, so multiply by ticket price and multiplier
+      const winVal = Math.round(sym.baseValue * selectedMode.price * multiplier);
       totalWinAmount += winVal;
       calculatedWinners.push(id);
       winDetails.push(`${matchedKey}x ${sym.label} (${winVal} SUI)`);

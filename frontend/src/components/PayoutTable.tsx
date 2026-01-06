@@ -44,12 +44,14 @@ export const PayoutTable = ({ selectedMode }: PayoutTableProps) => {
                   <span className="text-[10px] font-black text-slate-300 uppercase tracking-wide">
                     {sym.label}
                   </span>
-                  <span className="text-[10px] text-slate-500">Base: {sym.baseValue}</span>
+                  <span className="text-[10px] text-slate-500">
+                    3x: {Math.round(sym.baseValue * selectedMode.price * selectedMode.payouts[3])} SUI
+                  </span>
                 </div>
               </div>
               <div className="text-right">
                 <span className="font-mono text-xs font-bold text-white opacity-80">
-                  Max {sym.baseValue * Math.max(...Object.values(selectedMode.payouts))}
+                  Max {Math.round(sym.baseValue * selectedMode.price * Math.max(...Object.values(selectedMode.payouts)))} SUI
                 </span>
               </div>
             </div>
