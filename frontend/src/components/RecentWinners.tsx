@@ -6,7 +6,7 @@ export const RecentWinners = () => {
       <div className="p-5 border-b border-white/5 bg-white/5">
         <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
           <History size={16} className="text-green-500" />
-          Son Kazananlar
+          Recent Winners
         </h3>
       </div>
       <div className="p-3 space-y-2">
@@ -27,7 +27,7 @@ export const RecentWinners = () => {
       </div>
       <div className="p-3 text-center">
         <button className="text-[10px] text-blue-400 hover:text-blue-300 flex items-center justify-center gap-1 w-full">
-          Tümünü Gör <ChevronRight size={10} />
+          View All <ChevronRight size={10} />
         </button>
       </div>
     </div>

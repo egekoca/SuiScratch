@@ -30,17 +30,15 @@ export const initCanvas = (
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, rect.width, rect.height);
 
-  ctx.fillStyle = 'rgba(255,255,255,0.1)';
-  for (let i = 0; i < 30; i++) {
+  // Decorative pattern
+  ctx.fillStyle = 'rgba(255,255,255,0.05)';
+  for (let i = 0; i < 50; i++) {
     const x = Math.random() * rect.width;
     const y = Math.random() * rect.height;
-    const size = Math.random() * 40 + 10;
-    ctx.save();
-    ctx.translate(x, y);
-    ctx.rotate(Math.random() * Math.PI);
-    ctx.font = `${size}px sans-serif`;
-    ctx.fillText('💧', 0, 0);
-    ctx.restore();
+    const size = Math.random() * 8 + 2;
+    ctx.beginPath();
+    ctx.arc(x, y, size, 0, Math.PI * 2);
+    ctx.fill();
   }
 
   ctx.shadowColor = 'rgba(0,0,0,0.3)';

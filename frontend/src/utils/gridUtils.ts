@@ -14,11 +14,11 @@ export const getGridClass = (gridSize: number): string => {
 export const getSymbolSizeClass = (gridSize: number): string => {
   switch (gridSize) {
     case 4:
-      return 'text-4xl';
-    case 5:
-      return 'text-3xl';
-    default:
       return 'text-5xl';
+    case 5:
+      return 'text-4xl';
+    default:
+      return 'text-6xl';
   }
 };
 

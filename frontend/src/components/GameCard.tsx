@@ -82,25 +82,43 @@ export const GameCard = ({
                 const symbolId = symbolData.id;
                 const isWinningCell =
                   gameState === 'REVEALED' && winData?.isWin && winData.winningSymbolIds.includes(symbolId);
-                const isGhost = ['GHOST', 'CRAB', 'LEMON'].includes(symbolId);
+
+                // Get symbol-specific color for winning cells
+                const getWinningBorderColor = () => {
+                  if (symbolId === 'DIAMOND') return 'border-purple-500';
+                  if (symbolId === 'DROP') return 'border-blue-500';
+                  if (symbolId === 'ROCKET') return 'border-orange-500';
+                  if (symbolId === 'COIN') return 'border-yellow-500';
+                  return selectedMode.id === 'GOLD' ? 'border-yellow-400' : 'border-blue-400';
+                };
+
+                const getWinningRingColor = () => {
+                  if (symbolId === 'DIAMOND') return 'ring-purple-300';
+                  if (symbolId === 'DROP') return 'ring-blue-300';
+                  if (symbolId === 'ROCKET') return 'ring-orange-300';
+                  if (symbolId === 'COIN') return 'ring-yellow-300';
+                  return 'ring-blue-300';
+                };
 
                 return (
                   <div
                     key={idx}
                     className={`
-                      flex items-center justify-center ${getSymbolSizeClass(selectedMode.gridSize)} rounded-xl border
+                      flex items-center justify-center ${getSymbolSizeClass(selectedMode.gridSize)} rounded-xl border-2
                       transition-all duration-700 relative overflow-hidden aspect-square
                       ${isWinningCell
-                        ? `bg-white border-${selectedMode.id === 'GOLD' ? 'yellow' : 'blue'}-400 shadow-lg scale-105 z-10`
-                        : 'bg-slate-50 border-slate-200'}
-                      ${gameState === 'REVEALED' && isGhost ? 'opacity-30 grayscale blur-[1px]' : ''}
+                        ? `bg-white ${getWinningBorderColor()} shadow-xl scale-110 z-10 ring-2 ring-offset-2 ${getWinningRingColor()}`
+                        : 'bg-white border-slate-300 shadow-sm'}
                     `}
                   >
-                    <span
-                      className={`filter drop-shadow-sm transform transition-transform duration-500 ${isWinningCell ? 'scale-125 animate-bounce' : ''}`}
+                    <div
+                      className={`flex items-center justify-center filter drop-shadow-xl transform transition-transform duration-500 ${isWinningCell ? 'scale-130 animate-bounce' : ''} opacity-100`}
+                      style={{ minHeight: '70px', minWidth: '70px' }}
                     >
-                      {symbol}
-                    </span>
+                      <div className="w-full h-full flex items-center justify-center">
+                        {symbol}
+                      </div>
+                    </div>
                     {isWinningCell && (
                       <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/50 to-white/0 opacity-0 animate-[shimmer_1s_infinite]"></div>
                     )}
@@ -113,11 +131,11 @@ export const GameCard = ({
           {/* 2. Win/Loss Screen */}
           {gameState === 'REVEALED' &&
             (winData?.isWin ? (
-              <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none p-4">
+              <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-auto p-4">
                 <div className="bg-white/90 backdrop-blur-xl w-full py-8 rounded-3xl shadow-2xl border-4 border-yellow-400 transform animate-pop-in flex flex-col items-center text-center">
                   <Trophy className="text-yellow-500 w-16 h-16 mb-2 filter drop-shadow-lg animate-bounce" />
                   <h2 className="text-4xl font-black text-slate-800 tracking-tight mb-2 uppercase">
-                    Kazandın!
+                    You Won!
                   </h2>
 
                   <div className="flex flex-wrap gap-2 justify-center mb-4 px-4">
@@ -131,23 +149,30 @@ export const GameCard = ({
                     ))}
                   </div>
 
-                  <div className="text-4xl font-black text-green-600 font-mono tracking-tighter">
+                  <div className="text-4xl font-black text-green-600 font-mono tracking-tighter mb-6">
                     +{winData.totalAmount} <span className="text-xl">SUI</span>
                   </div>
+
+                  <button
+                    onClick={onResetGame}
+                    className={`bg-gradient-to-r ${selectedMode.gradient} text-white font-bold py-3 px-10 rounded-xl shadow-lg hover:scale-105 transition-transform flex items-center gap-2`}
+                  >
+                    Continue
+                  </button>
                 </div>
               </div>
             ) : (
               <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-auto p-6">
                 <div className="bg-[#18181b]/95 backdrop-blur-xl w-full py-8 rounded-3xl shadow-2xl border border-white/10 transform animate-pop-in flex flex-col items-center text-center">
                   <Frown className="text-slate-500 w-16 h-16 mb-4" />
-                  <h2 className="text-2xl font-bold text-white mb-1">Şanssız Tur</h2>
-                  <p className="text-slate-400 mb-6 text-sm">Bu bilet boş çıktı.</p>
+                  <h2 className="text-2xl font-bold text-white mb-1">Unlucky Round</h2>
+                  <p className="text-slate-400 mb-6 text-sm">This ticket was empty.</p>
                   <button
                     onClick={onResetGame}
                     className={`bg-gradient-to-r ${selectedMode.gradient} text-white font-bold py-3 px-10 rounded-xl shadow-lg hover:scale-105 transition-transform flex items-center gap-2`}
                   >
                     <RotateCcw size={18} />
-                    Tekrar Dene
+                    Try Again
                   </button>
                 </div>
               </div>
@@ -220,7 +245,7 @@ export const GameCard = ({
               >
                 <div className="absolute inset-0 bg-white/20 group-hover:translate-x-full duration-1000 transition-transform skew-x-12 -ml-4"></div>
                 <div className="relative flex items-center justify-center gap-3">
-                  <span>Bilet Satın Al</span>
+                  <span>Buy Ticket</span>
                   <span className="bg-black/20 px-3 py-1 rounded-lg text-sm font-mono border border-white/10 group-hover:bg-black/30 transition-colors">
                     {selectedMode.price} SUI
                   </span>
@@ -236,7 +261,7 @@ export const GameCard = ({
         className={`mt-6 text-center transition-opacity duration-500 ${gameState === 'PLAYING' ? 'opacity-100' : 'opacity-0'}`}
       >
         <p className="text-slate-400 text-sm font-medium animate-pulse">
-          Kartın üzerini kazıyarak şansını dene!
+          Scratch the card to reveal your fortune!
         </p>
       </div>
     </div>

@@ -17,7 +17,7 @@ export interface GameMode {
 
 export interface Symbol {
   id: string;
-  icon: string;
+  icon: ReactNode;
   baseValue: number;
   label: string;
 }
@@ -30,7 +30,7 @@ export interface WinData {
 }
 
 export interface GridSymbol {
-  icon: string;
+  icon: ReactNode;
   id: string;
 }
 

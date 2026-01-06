@@ -8,7 +8,7 @@ export const useGame = () => {
   const [selectedMode, setSelectedMode] = useState<GameMode>(GAME_MODES.STANDARD);
   const [gameState, setGameState] = useState<GameState>('IDLE');
   const [gridSymbols, setGridSymbols] = useState<GridSymbol[]>(
-    Array(9).fill({ icon: '❓', id: 'unknown' })
+    Array(9).fill({ icon: null, id: 'unknown' })
   );
   const [winData, setWinData] = useState<WinData | null>(null);
 
@@ -23,7 +23,7 @@ export const useGame = () => {
 
   const buyTicket = useCallback(() => {
     if (balance < selectedMode.price) {
-      alert('Yetersiz Bakiye!');
+      alert('Insufficient Balance!');
       return;
     }
     setBalance((prev) => prev - selectedMode.price);
@@ -41,7 +41,7 @@ export const useGame = () => {
     setGameState('IDLE');
     setWinData(null);
     setGridSymbols(
-      Array(selectedMode.gridSize * selectedMode.gridSize).fill({ icon: '❓', id: 'unknown' })
+      Array(selectedMode.gridSize * selectedMode.gridSize).fill({ icon: null, id: 'unknown' })
     );
     if (force) {
       // Canvas will be cleared by GameCard component

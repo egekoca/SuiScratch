@@ -11,7 +11,7 @@ export const generateGrid = (selectedMode: GameMode): { grid: GridSymbol[]; winD
   else if (rand < 0.60) intendedScenario = 'COMBO';
 
   const winningKeys = WINNING_SYMBOL_KEYS;
-  const losingKeys = ['GHOST', 'LEMON', 'CRAB'];
+  // Only use winning symbols - no losing symbols
 
   if (intendedScenario !== 'LOSS') {
     const numWinningSymbols = intendedScenario === 'COMBO' ? 2 : 1;
@@ -55,10 +55,10 @@ export const generateGrid = (selectedMode: GameMode): { grid: GridSymbol[]; winD
     });
   }
 
+  // Fill remaining cells with random winning symbols only
   for (let i = 0; i < totalCells; i++) {
     if (!grid[i]) {
-      const pool = intendedScenario === 'LOSS' ? losingKeys : [...winningKeys, ...losingKeys];
-      const randomKey = pool[Math.floor(Math.random() * pool.length)];
+      const randomKey = winningKeys[Math.floor(Math.random() * winningKeys.length)];
       grid[i] = BASE_SYMBOLS[randomKey];
     }
   }
@@ -94,7 +94,7 @@ export const generateGrid = (selectedMode: GameMode): { grid: GridSymbol[]; winD
       const winVal = Math.round(sym.baseValue * multiplier);
       totalWinAmount += winVal;
       calculatedWinners.push(id);
-      winDetails.push(`${matchedKey}x ${sym.icon} (${winVal})`);
+      winDetails.push(`${matchedKey}x ${sym.label} (${winVal} SUI)`);
     }
   });
 

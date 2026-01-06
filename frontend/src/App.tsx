@@ -83,7 +83,7 @@ function App() {
             {/* Statistics Box */}
             <div className="bg-gradient-to-br from-blue-900/40 to-slate-900/40 backdrop-blur-md rounded-3xl border border-white/10 p-5">
               <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">
-                Toplam Dağıtılan
+                Total Distributed
               </div>
               <div className="text-2xl font-black text-white font-mono">1,240,050</div>
               <div className="text-xs text-blue-400 font-bold">SUI</div>
