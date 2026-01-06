@@ -33,6 +33,15 @@ export const GameCard = ({
   useEffect(() => {
     if (gameState === 'PLAYING' && canvasRef.current) {
       initCanvas(canvasRef.current, selectedMode);
+    } else if (gameState === 'REVEALED' && canvasRef.current) {
+      // Clear canvas when revealed
+      const ctx = canvasRef.current.getContext('2d');
+      if (ctx) {
+        ctx.save();
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+        ctx.restore();
+      }
     }
   }, [gameState, selectedMode]);
 

@@ -2,7 +2,7 @@ import { useRef, useState, useCallback, useEffect } from 'react';
 import { GameState } from '@/types/game';
 import { getPosition } from '@/utils/canvasUtils';
 
-const SCRATCH_THRESHOLD = 2000;
+const SCRATCH_PERCENTAGE_THRESHOLD = 0.7; // %70
 
 export const useScratch = (
   canvasRef: React.RefObject<HTMLCanvasElement>,
@@ -11,7 +11,8 @@ export const useScratch = (
 ) => {
   const isDrawing = useRef(false);
   const lastPoint = useRef<{ x: number; y: number } | null>(null);
-  const scratchProgress = useRef(0);
+  const scratchedPixels = useRef(0);
+  const totalPixels = useRef(0);
   const [currentPoint, setCurrentPoint] = useState<{ x: number; y: number } | null>(null);
 
   const startScratch = useCallback(
@@ -24,6 +25,29 @@ export const useScratch = (
     },
     [gameState, canvasRef]
   );
+
+  const calculateScratchedArea = useCallback((canvas: HTMLCanvasElement): number => {
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    if (!ctx) return 0;
+
+    // Use sampling for better performance (check every 4th pixel)
+    const sampleRate = 4;
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const data = imageData.data;
+    let transparentPixels = 0;
+    let totalSampled = 0;
+
+    // Count transparent pixels with sampling
+    for (let i = 3; i < data.length; i += sampleRate * 4) {
+      totalSampled++;
+      if (data[i] === 0) {
+        transparentPixels++;
+      }
+    }
+
+    // Extrapolate to total pixels
+    return Math.round((transparentPixels / totalSampled) * (canvas.width * canvas.height));
+  }, []);
 
   const moveScratch = useCallback(
     (e: React.MouseEvent | React.TouchEvent) => {
@@ -48,16 +72,37 @@ export const useScratch = (
       ctx.shadowColor = '#000';
       ctx.stroke();
 
-      const dist = Math.hypot(currentPos.x - last.x, currentPos.y - last.y);
-      scratchProgress.current += dist;
       lastPoint.current = currentPos;
       setCurrentPoint(currentPos);
 
-      if (scratchProgress.current > SCRATCH_THRESHOLD) {
-        onReveal();
+      // Calculate scratched area percentage
+      if (totalPixels.current === 0) {
+        totalPixels.current = canvas.width * canvas.height;
+      }
+
+      // Throttle the calculation to avoid performance issues
+      const now = Date.now();
+      if (!(window as any).lastScratchCheck) {
+        (window as any).lastScratchCheck = now;
+      }
+
+        if (now - (window as any).lastScratchCheck > 100) {
+        // Check every 100ms
+        scratchedPixels.current = calculateScratchedArea(canvas);
+        const scratchedPercentage = scratchedPixels.current / totalPixels.current;
+
+        if (scratchedPercentage >= SCRATCH_PERCENTAGE_THRESHOLD) {
+          // Clear entire canvas to reveal all
+          ctx.save();
+          ctx.setTransform(1, 0, 0, 1, 0, 0);
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.restore();
+          onReveal();
+        }
+        (window as any).lastScratchCheck = now;
       }
     },
-    [gameState, canvasRef, onReveal]
+    [gameState, canvasRef, onReveal, calculateScratchedArea]
   );
 
   const endScratch = useCallback(() => {
@@ -76,9 +121,11 @@ export const useScratch = (
   );
 
   const resetScratch = useCallback(() => {
-    scratchProgress.current = 0;
+    scratchedPixels.current = 0;
+    totalPixels.current = 0;
     lastPoint.current = null;
     setCurrentPoint(null);
+    (window as any).lastScratchCheck = 0;
   }, []);
 
   useEffect(() => {
