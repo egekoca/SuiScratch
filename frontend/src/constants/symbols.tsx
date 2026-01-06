@@ -1,10 +1,10 @@
 import React from 'react';
-import { Gem, Droplet, Rocket, Coins, Ghost, AlertCircle, X } from 'lucide-react';
+import { Gem, Droplet, Rocket, Coins, Ghost, AlertCircle, X, Star, Crown, Sparkles, LucideIcon } from 'lucide-react';
 import { Symbol } from '@/types/game';
 
 // Icon components factory with colors and sizes
 const createIcon = (
-  IconComponent: React.ComponentType<{ className?: string; color?: string; strokeWidth?: number; size?: number; fill?: string }>,
+  IconComponent: LucideIcon,
   colorClass: string,
   strokeWidth: number = 3,
   fillClass?: string
@@ -18,7 +18,7 @@ const createIcon = (
     strokeWidth: strokeWidth,
     size: undefined, // Let it fill the container
     fill: fillClass ? 'currentColor' : undefined,
-  });
+  } as any);
 };
 
 export const BASE_SYMBOLS: Record<string, Symbol> = {
@@ -46,6 +46,24 @@ export const BASE_SYMBOLS: Record<string, Symbol> = {
     baseValue: 0.08, // 8% of ticket price for 3 matches
     label: 'WIN',
   },
+  STAR: {
+    id: 'STAR',
+    icon: createIcon(Star, 'text-pink-500', 2.5, 'fill-pink-500'),
+    baseValue: 0.15, // 15% of ticket price for 3 matches
+    label: 'ULTRA',
+  },
+  CROWN: {
+    id: 'CROWN',
+    icon: createIcon(Crown, 'text-amber-500', 2.5, 'fill-amber-500'),
+    baseValue: 0.3, // 30% of ticket price for 3 matches
+    label: 'LEGEND',
+  },
+  SPARKLES: {
+    id: 'SPARKLES',
+    icon: createIcon(Sparkles, 'text-cyan-500', 2.5, 'fill-cyan-500'),
+    baseValue: 0.25, // 25% of ticket price for 3 matches
+    label: 'EPIC',
+  },
   GHOST: {
     id: 'GHOST',
     icon: createIcon(Ghost, 'text-slate-400', 3),
@@ -66,6 +84,11 @@ export const BASE_SYMBOLS: Record<string, Symbol> = {
   },
 };
 
-export const WINNING_SYMBOL_KEYS = ['DIAMOND', 'DROP', 'ROCKET', 'COIN'];
+export const WINNING_SYMBOL_KEYS = ['DIAMOND', 'DROP', 'ROCKET', 'COIN', 'STAR', 'CROWN', 'SPARKLES'];
 export const LOSING_SYMBOL_KEYS = ['GHOST', 'LEMON', 'CRAB'];
+
+// Symbols available for each game mode
+export const STANDARD_SYMBOLS = ['DIAMOND', 'DROP', 'ROCKET', 'COIN', 'STAR']; // 5 symbols
+export const GOLD_SYMBOLS = ['DIAMOND', 'DROP', 'ROCKET', 'COIN', 'STAR', 'CROWN']; // 6 symbols
+export const PLATINUM_SYMBOLS = ['DIAMOND', 'DROP', 'ROCKET', 'COIN', 'STAR', 'CROWN', 'SPARKLES']; // 7 symbols
 

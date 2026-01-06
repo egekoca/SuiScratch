@@ -1,5 +1,5 @@
 import { Trophy } from 'lucide-react';
-import { BASE_SYMBOLS } from '@/constants/symbols';
+import { BASE_SYMBOLS, STANDARD_SYMBOLS, GOLD_SYMBOLS, PLATINUM_SYMBOLS } from '@/constants/symbols';
 import { GameMode } from '@/types/game';
 
 interface PayoutTableProps {
@@ -7,7 +7,17 @@ interface PayoutTableProps {
 }
 
 export const PayoutTable = ({ selectedMode }: PayoutTableProps) => {
-  const winningSymbols = [BASE_SYMBOLS.DIAMOND, BASE_SYMBOLS.DROP, BASE_SYMBOLS.ROCKET, BASE_SYMBOLS.COIN];
+  // Get symbols for this game mode
+  let symbolKeys: string[];
+  if (selectedMode.id === 'STANDARD') {
+    symbolKeys = STANDARD_SYMBOLS;
+  } else if (selectedMode.id === 'GOLD') {
+    symbolKeys = GOLD_SYMBOLS;
+  } else {
+    symbolKeys = PLATINUM_SYMBOLS;
+  }
+  
+  const winningSymbols = symbolKeys.map(key => BASE_SYMBOLS[key]);
 
   return (
     <div className="bg-[#18181b]/80 backdrop-blur-md rounded-3xl border border-white/10 overflow-hidden shadow-2xl">
@@ -26,6 +36,9 @@ export const PayoutTable = ({ selectedMode }: PayoutTableProps) => {
             if (sym.id === 'DROP') return 'bg-blue-500/10 border-blue-500/30';
             if (sym.id === 'ROCKET') return 'bg-orange-500/10 border-orange-500/30';
             if (sym.id === 'COIN') return 'bg-yellow-500/10 border-yellow-500/30';
+            if (sym.id === 'STAR') return 'bg-pink-500/10 border-pink-500/30';
+            if (sym.id === 'CROWN') return 'bg-amber-500/10 border-amber-500/30';
+            if (sym.id === 'SPARKLES') return 'bg-cyan-500/10 border-cyan-500/30';
             return 'bg-white/5 border-white/10';
           };
 
@@ -45,7 +58,7 @@ export const PayoutTable = ({ selectedMode }: PayoutTableProps) => {
                     {sym.label}
                   </span>
                   <span className="text-[10px] text-slate-500">
-                    3x: {Math.round(sym.baseValue * selectedMode.price * selectedMode.payouts[3])} SUI
+                    {selectedMode.matchReq}x: {Math.round(sym.baseValue * selectedMode.price * (selectedMode.payouts[selectedMode.matchReq] || 0))} SUI
                   </span>
                 </div>
               </div>

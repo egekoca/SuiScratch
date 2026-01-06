@@ -1,5 +1,5 @@
 import { GameMode, GridSymbol, WinData } from '@/types/game';
-import { BASE_SYMBOLS, WINNING_SYMBOL_KEYS } from '@/constants/symbols';
+import { BASE_SYMBOLS, STANDARD_SYMBOLS, GOLD_SYMBOLS, PLATINUM_SYMBOLS } from '@/constants/symbols';
 
 export const generateGrid = (selectedMode: GameMode): { grid: GridSymbol[]; winData: WinData } => {
   const totalCells = selectedMode.gridSize * selectedMode.gridSize;
@@ -10,19 +10,37 @@ export const generateGrid = (selectedMode: GameMode): { grid: GridSymbol[]; winD
   if (rand < 0.45) intendedScenario = 'SINGLE';
   else if (rand < 0.60) intendedScenario = 'COMBO';
 
-  const winningKeys = WINNING_SYMBOL_KEYS;
+  // Get available symbols for this game mode
+  let winningKeys: string[];
+  if (selectedMode.id === 'STANDARD') {
+    winningKeys = STANDARD_SYMBOLS;
+  } else if (selectedMode.id === 'GOLD') {
+    winningKeys = GOLD_SYMBOLS;
+  } else {
+    winningKeys = PLATINUM_SYMBOLS;
+  }
 
   if (intendedScenario !== 'LOSS') {
     const numWinningSymbols = intendedScenario === 'COMBO' ? 2 : 1;
     const chosenWinningKeys: string[] = [];
 
-    // Weighted selection: DIAMOND has lower chance (10%), others have equal chance (30% each)
+    // Weighted selection based on available symbols
     const getWeightedSymbol = (): string => {
       const rand = Math.random();
-      if (rand < 0.1) return 'DIAMOND'; // 10% chance
-      if (rand < 0.4) return 'DROP'; // 30% chance
-      if (rand < 0.7) return 'ROCKET'; // 30% chance
-      return 'COIN'; // 30% chance
+      const totalSymbols = winningKeys.length;
+      // DIAMOND has lower chance, others have equal chance
+      if (winningKeys.includes('DIAMOND')) {
+        if (rand < 0.1) return 'DIAMOND'; // 10% chance
+        const otherSymbols = winningKeys.filter(k => k !== 'DIAMOND');
+        const equalChance = 0.9 / otherSymbols.length;
+        let cumulative = 0.1;
+        for (const sym of otherSymbols) {
+          cumulative += equalChance;
+          if (rand < cumulative) return sym;
+        }
+      }
+      // If no DIAMOND, equal chance for all
+      return winningKeys[Math.floor(Math.random() * winningKeys.length)];
     };
 
     while (chosenWinningKeys.length < numWinningSymbols) {
@@ -88,10 +106,17 @@ export const generateGrid = (selectedMode: GameMode): { grid: GridSymbol[]; winD
         // Use weighted selection (DIAMOND less likely)
         const getWeightedSymbol = (): string => {
           const rand = Math.random();
-          if (rand < 0.1) return 'DIAMOND'; // 10% chance
-          if (rand < 0.4) return 'DROP'; // 30% chance
-          if (rand < 0.7) return 'ROCKET'; // 30% chance
-          return 'COIN'; // 30% chance
+          if (winningKeys.includes('DIAMOND')) {
+            if (rand < 0.1) return 'DIAMOND'; // 10% chance
+            const otherSymbols = winningKeys.filter(k => k !== 'DIAMOND');
+            const equalChance = 0.9 / otherSymbols.length;
+            let cumulative = 0.1;
+            for (const sym of otherSymbols) {
+              cumulative += equalChance;
+              if (rand < cumulative) return sym;
+            }
+          }
+          return winningKeys[Math.floor(Math.random() * winningKeys.length)];
         };
 
         if (availableSymbols.length === 0) {
@@ -110,10 +135,17 @@ export const generateGrid = (selectedMode: GameMode): { grid: GridSymbol[]; winD
         // For WIN scenarios, fill with weighted random winning symbols (DIAMOND less likely)
         const getWeightedSymbol = (): string => {
           const rand = Math.random();
-          if (rand < 0.1) return 'DIAMOND'; // 10% chance
-          if (rand < 0.4) return 'DROP'; // 30% chance
-          if (rand < 0.7) return 'ROCKET'; // 30% chance
-          return 'COIN'; // 30% chance
+          if (winningKeys.includes('DIAMOND')) {
+            if (rand < 0.1) return 'DIAMOND'; // 10% chance
+            const otherSymbols = winningKeys.filter(k => k !== 'DIAMOND');
+            const equalChance = 0.9 / otherSymbols.length;
+            let cumulative = 0.1;
+            for (const sym of otherSymbols) {
+              cumulative += equalChance;
+              if (rand < cumulative) return sym;
+            }
+          }
+          return winningKeys[Math.floor(Math.random() * winningKeys.length)];
         };
         const randomWinningKey = getWeightedSymbol();
         grid[i] = BASE_SYMBOLS[randomWinningKey];
@@ -150,10 +182,12 @@ export const generateGrid = (selectedMode: GameMode): { grid: GridSymbol[]; winD
     if (multiplier > 0) {
       const sym = BASE_SYMBOLS[id];
       // baseValue is a percentage of ticket price, so multiply by ticket price and multiplier
-      const winVal = Math.round(sym.baseValue * selectedMode.price * multiplier);
+      const winVal = sym.baseValue * selectedMode.price * multiplier;
       totalWinAmount += winVal;
       calculatedWinners.push(id);
-      winDetails.push(`${matchedKey}x ${sym.label} (${winVal} SUI)`);
+      // Format with up to 2 decimal places, but show decimals only if needed
+      const formattedVal = winVal % 1 === 0 ? winVal.toFixed(0) : winVal.toFixed(2);
+      winDetails.push(`${matchedKey}x ${sym.label} (${formattedVal} SUI)`);
     }
   });
 

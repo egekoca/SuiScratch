@@ -1,5 +1,5 @@
 import { useRef, useEffect } from 'react';
-import { Ticket, Star, RotateCcw, Trophy, Frown, Grid3x3, Grid, LayoutGrid, Coins, Sparkles } from 'lucide-react';
+import { Ticket, Star, RotateCcw, Trophy, Frown, Grid3x3, Grid, LayoutGrid, Coins, Sparkles, X } from 'lucide-react';
 import { GameMode, GameState, GridSymbol, WinData } from '@/types/game';
 import { getGridClass, getSymbolSizeClass } from '@/utils/gridUtils';
 import { initCanvas } from '@/utils/canvasUtils';
@@ -104,6 +104,9 @@ export const GameCard = ({
                   if (symbolId === 'DROP') return 'border-blue-500';
                   if (symbolId === 'ROCKET') return 'border-orange-500';
                   if (symbolId === 'COIN') return 'border-yellow-500';
+                  if (symbolId === 'STAR') return 'border-pink-500';
+                  if (symbolId === 'CROWN') return 'border-amber-500';
+                  if (symbolId === 'SPARKLES') return 'border-cyan-500';
                   return selectedMode.id === 'GOLD' ? 'border-yellow-400' : 'border-blue-400';
                 };
 
@@ -112,6 +115,9 @@ export const GameCard = ({
                   if (symbolId === 'DROP') return 'ring-blue-300';
                   if (symbolId === 'ROCKET') return 'ring-orange-300';
                   if (symbolId === 'COIN') return 'ring-yellow-300';
+                  if (symbolId === 'STAR') return 'ring-pink-300';
+                  if (symbolId === 'CROWN') return 'ring-amber-300';
+                  if (symbolId === 'SPARKLES') return 'ring-cyan-300';
                   return 'ring-blue-300';
                 };
 
@@ -147,7 +153,16 @@ export const GameCard = ({
           {gameState === 'REVEALED' &&
             (winData?.isWin ? (
               <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-auto p-4">
-                <div className="bg-white/90 backdrop-blur-xl w-full py-8 rounded-3xl shadow-2xl border-4 border-yellow-400 transform animate-pop-in flex flex-col items-center text-center">
+                <div className="bg-white/90 backdrop-blur-xl w-full py-8 rounded-3xl shadow-2xl border-4 border-yellow-400 transform animate-pop-in flex flex-col items-center text-center relative">
+                  {/* Close button */}
+                  <button
+                    onClick={onResetGame}
+                    className="absolute top-4 right-4 p-2 rounded-full bg-slate-200/80 hover:bg-slate-300/80 transition-colors"
+                    aria-label="Close"
+                  >
+                    <X size={20} className="text-slate-600" />
+                  </button>
+
                   <Trophy className="text-yellow-500 w-16 h-16 mb-2 filter drop-shadow-lg animate-bounce" />
                   <h2 className="text-4xl font-black text-slate-800 tracking-tight mb-2 uppercase">
                     You Won!
@@ -165,7 +180,7 @@ export const GameCard = ({
                   </div>
 
                   <div className="text-4xl font-black text-green-600 font-mono tracking-tighter mb-6">
-                    +{winData.totalAmount} <span className="text-xl">SUI</span>
+                    +{winData.totalAmount % 1 === 0 ? winData.totalAmount.toFixed(0) : winData.totalAmount.toFixed(2)} <span className="text-xl">SUI</span>
                   </div>
 
                   <button
@@ -178,7 +193,16 @@ export const GameCard = ({
               </div>
             ) : (
               <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-auto p-6">
-                <div className="bg-[#18181b]/95 backdrop-blur-xl w-full py-8 rounded-3xl shadow-2xl border border-white/10 transform animate-pop-in flex flex-col items-center text-center">
+                <div className="bg-[#18181b]/95 backdrop-blur-xl w-full py-8 rounded-3xl shadow-2xl border border-white/10 transform animate-pop-in flex flex-col items-center text-center relative">
+                  {/* Close button */}
+                  <button
+                    onClick={onResetGame}
+                    className="absolute top-4 right-4 p-2 rounded-full bg-slate-700/80 hover:bg-slate-600/80 transition-colors"
+                    aria-label="Close"
+                  >
+                    <X size={20} className="text-white" />
+                  </button>
+
                   <Frown className="text-slate-500 w-16 h-16 mb-4" />
                   <h2 className="text-2xl font-bold text-white mb-1">Unlucky Round</h2>
                   <p className="text-slate-400 mb-6 text-sm">This ticket was empty.</p>
