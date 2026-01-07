@@ -27,7 +27,9 @@ export const ModeSelector = ({ selectedMode, gameState, onChangeMode }: ModeSele
             <div
               className={`p-1.5 rounded-lg bg-black/20 ${selectedMode.id === mode.id ? 'text-white' : 'text-slate-500'}`}
             >
-              {mode.icon}
+              <div className={selectedMode.id === mode.id ? 'text-white' : 'text-slate-500'}>
+                {mode.icon}
+              </div>
             </div>
             <div className="text-left flex flex-col leading-none gap-1">
               <span className="font-bold text-sm tracking-wide">{mode.name}</span>

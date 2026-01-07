@@ -1,5 +1,5 @@
 import { useRef, useEffect } from 'react';
-import { Ticket, Star, RotateCcw, Trophy, Frown, Grid3x3, Grid, LayoutGrid, Coins, Sparkles, X } from 'lucide-react';
+import { Ticket, Star, RotateCcw, Trophy, Frown, Droplet, Crown, Zap, Coins, Sparkles, X } from 'lucide-react';
 import { GameMode, GameState, GridSymbol, WinData } from '@/types/game';
 import { getGridClass, getSymbolSizeClass } from '@/utils/gridUtils';
 import { initCanvas } from '@/utils/canvasUtils';
@@ -196,9 +196,9 @@ export const GameCard = ({
               <div
                 className={`w-24 h-24 bg-gradient-to-br ${selectedMode.gradient} rounded-3xl flex items-center justify-center mb-6 shadow-[0_0_40px_rgba(0,0,0,0.5)] ring-1 ring-white/20 transform rotate-3`}
               >
-                {selectedMode.id === 'STANDARD' && <Grid3x3 size={40} />}
-                {selectedMode.id === 'GOLD' && <Grid size={40} />}
-                {selectedMode.id === 'PLATINUM' && <LayoutGrid size={40} />}
+                {selectedMode.id === 'STANDARD' && <Droplet size={40} className="text-white drop-shadow-lg" />}
+                {selectedMode.id === 'GOLD' && <Crown size={40} className="text-white drop-shadow-lg" />}
+                {selectedMode.id === 'PLATINUM' && <Zap size={40} className="text-white drop-shadow-lg" />}
               </div>
 
               <div className="space-y-1 mb-8">
