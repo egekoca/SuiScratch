@@ -4,6 +4,7 @@ import { GameCard } from '@/components/GameCard';
 import { PayoutTable } from '@/components/PayoutTable';
 import { RecentWinners } from '@/components/RecentWinners';
 import { Confetti } from '@/components/Confetti';
+import { AdminPanel } from '@/components/AdminPanel';
 import { useGame } from '@/hooks/useGame';
 import { useEffect, useRef, useState } from 'react';
 
@@ -18,6 +19,10 @@ function App() {
     buyTicket,
     resetGame,
     revealGame,
+    purchaseLoading,
+    purchaseError,
+    claimLoading,
+    claimError,
   } = useGame();
   
   const [showConfetti, setShowConfetti] = useState(false);
@@ -65,7 +70,7 @@ function App() {
         <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 brightness-100 contrast-150"></div>
       </div>
 
-      <Header balance={balance} selectedMode={selectedMode} />
+      <Header selectedMode={selectedMode} />
 
       <main className="flex-1 w-full max-w-7xl p-6 lg:p-8 flex flex-col items-center gap-8 relative z-10">
         {/* Mode Selection */}
@@ -94,6 +99,10 @@ function App() {
               onReveal={revealGame}
               onBuyTicket={buyTicket}
               onResetGame={() => resetGame(false)}
+              purchaseLoading={purchaseLoading}
+              purchaseError={purchaseError}
+              claimLoading={claimLoading}
+              claimError={claimError}
             />
           </div>
 
@@ -112,6 +121,9 @@ function App() {
           </div>
         </div>
       </main>
+
+      {/* Admin Panel (Only visible to admin wallet) */}
+      <AdminPanel />
     </div>
   );
 }

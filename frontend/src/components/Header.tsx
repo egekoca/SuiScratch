@@ -1,14 +1,18 @@
 import { Sparkles, Coins, Wallet } from 'lucide-react';
 import { GameMode } from '@/types/game';
 import { useWalletKit, ConnectButton } from '@mysten/wallet-kit';
+import { useWalletBalance } from '@/hooks/useWalletBalance';
+import { getNetworkConfig } from '@/config/sui';
 
 interface HeaderProps {
-  balance: number;
   selectedMode: GameMode;
 }
 
-export const Header = ({ balance, selectedMode }: HeaderProps) => {
+export const Header = ({ selectedMode }: HeaderProps) => {
   const { disconnect, isConnected, currentAccount } = useWalletKit();
+  const { balance, loading: balanceLoading } = useWalletBalance();
+  const networkConfig = getNetworkConfig();
+  const networkName = networkConfig.network.charAt(0).toUpperCase() + networkConfig.network.slice(1);
 
   const handleDisconnect = async () => {
     try {
@@ -39,15 +43,21 @@ export const Header = ({ balance, selectedMode }: HeaderProps) => {
 
         <div className="flex items-center gap-4">
           <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs font-medium text-slate-400">
-            <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-            Mainnet v1.2
+            <span className={`w-2 h-2 rounded-full animate-pulse ${
+              networkConfig.network === 'mainnet' ? 'bg-green-500' :
+              networkConfig.network === 'testnet' ? 'bg-yellow-500' :
+              'bg-blue-500'
+            }`}></span>
+            {networkName} v1.2
           </div>
           <div className="group flex items-center gap-3 bg-[#18181b] pl-4 pr-1.5 py-1.5 rounded-full border border-white/10 shadow-xl transition-all hover:border-white/20">
             <div className="flex flex-col items-end leading-none">
               <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">
                 Balance
               </span>
-              <span className="font-mono font-bold text-white text-lg">{balance.toFixed(2)}</span>
+              <span className="font-mono font-bold text-white text-lg">
+                {balanceLoading ? '...' : balance.toFixed(2)}
+              </span>
             </div>
             <div className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold shadow-lg group-hover:scale-105 transition-transform">
               <Coins size={18} />

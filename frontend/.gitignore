@@ -20,3 +20,8 @@ dist-ssr
 *.suimove
 *.suimove/
 
+# Environment variables
+.env
+.env.local
+.env.*.local
+

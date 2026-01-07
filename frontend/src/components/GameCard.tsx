@@ -14,6 +14,10 @@ interface GameCardProps {
   onReveal: () => void;
   onBuyTicket: () => void;
   onResetGame: () => void;
+  purchaseLoading?: boolean;
+  purchaseError?: string | null;
+  claimLoading?: boolean;
+  claimError?: string | null;
 }
 
 export const GameCard = ({
@@ -24,6 +28,10 @@ export const GameCard = ({
   onReveal,
   onBuyTicket,
   onResetGame,
+  purchaseLoading = false,
+  purchaseError = null,
+  claimLoading = false,
+  claimError = null,
 }: GameCardProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -210,7 +218,10 @@ export const GameCard = ({
                   <span>
                     Max Win:{' '}
                     <span className="text-white">
-                      {100 * Math.max(...Object.values(selectedMode.payouts))} SUI
+                      {(() => {
+                        const maxPayout = Math.max(...Object.values(selectedMode.payouts));
+                        return maxPayout % 1 === 0 ? maxPayout.toFixed(0) : maxPayout.toFixed(2);
+                      })()} SUI
                     </span>
                   </span>
                 </div>
@@ -223,23 +234,36 @@ export const GameCard = ({
                   </p>
                 </div>
               )}
+              {purchaseError && (
+                <div className="mb-4 p-3 rounded-xl bg-red-500/20 border border-red-500/50 text-center">
+                  <p className="text-sm font-bold text-red-400">
+                    {purchaseError}
+                  </p>
+                </div>
+              )}
               <button
                 onClick={handleBuyTicket}
-                disabled={!isConnected}
+                disabled={!isConnected || purchaseLoading}
                 className={`
                   group relative w-full py-4 px-6 rounded-2xl font-bold text-lg overflow-hidden
                   bg-gradient-to-r ${selectedMode.gradient} shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)]
                   transition-all hover:scale-[1.02] active:scale-[0.98]
-                  ${!isConnected ? 'opacity-50 cursor-not-allowed' : ''}
+                  ${!isConnected || purchaseLoading ? 'opacity-50 cursor-not-allowed' : ''}
                 `}
               >
                 <div className="absolute inset-0 bg-white/20 group-hover:translate-x-full duration-1000 transition-transform skew-x-12 -ml-4"></div>
                 <div className="relative flex items-center justify-center gap-3">
-                  <span>{!isConnected ? 'Connect Wallet First' : 'Buy Ticket'}</span>
-                  {isConnected && (
-                    <span className="bg-black/20 px-3 py-1 rounded-lg text-sm font-mono border border-white/10 group-hover:bg-black/30 transition-colors">
-                      {selectedMode.price} SUI
-                    </span>
+                  {purchaseLoading ? (
+                    <span>Processing...</span>
+                  ) : (
+                    <>
+                      <span>{!isConnected ? 'Connect Wallet First' : 'Buy Ticket'}</span>
+                      {isConnected && (
+                        <span className="bg-black/20 px-3 py-1 rounded-lg text-sm font-mono border border-white/10 group-hover:bg-black/30 transition-colors">
+                          {selectedMode.price} SUI
+                        </span>
+                      )}
+                    </>
                   )}
                 </div>
               </button>
@@ -289,18 +313,24 @@ export const GameCard = ({
                 <X size={14} className="text-slate-600" />
               </button>
 
-              {/* Left side - Trophy and title */}
-              <div className="flex items-center gap-3 ml-8">
-                <Trophy className="text-yellow-500 w-8 h-8 filter drop-shadow-lg flex-shrink-0" />
-                <div>
-                  <h2 className="text-lg font-black text-slate-800 tracking-tight uppercase">
-                    You Won!
-                  </h2>
-                  <div className="text-xl font-black text-green-600 font-mono tracking-tighter">
-                    +{winData.totalAmount % 1 === 0 ? winData.totalAmount.toFixed(0) : winData.totalAmount.toFixed(2)} <span className="text-sm">SUI</span>
-                  </div>
-                </div>
-              </div>
+                     {/* Left side - Trophy and title */}
+                     <div className="flex items-center gap-3 ml-8">
+                       <Trophy className="text-yellow-500 w-8 h-8 filter drop-shadow-lg flex-shrink-0" />
+                       <div>
+                         <h2 className="text-lg font-black text-slate-800 tracking-tight uppercase">
+                           You Won!
+                         </h2>
+                         <div className="text-xl font-black text-green-600 font-mono tracking-tighter">
+                           +{winData.totalAmount % 1 === 0 ? winData.totalAmount.toFixed(0) : winData.totalAmount.toFixed(2)} <span className="text-sm">SUI</span>
+                         </div>
+                         {claimLoading && (
+                           <p className="text-xs text-slate-600 mt-1">Claiming winnings...</p>
+                         )}
+                         {claimError && (
+                           <p className="text-xs text-red-600 mt-1">Failed to claim: {claimError}</p>
+                         )}
+                       </div>
+                     </div>
 
               {/* Middle - Details */}
               <div className="flex-1 flex flex-wrap gap-1.5 justify-center items-center max-h-20 overflow-y-auto">
