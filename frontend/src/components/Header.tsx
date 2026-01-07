@@ -1,5 +1,6 @@
-import { Sparkles, Coins } from 'lucide-react';
+import { Sparkles, Coins, Wallet } from 'lucide-react';
 import { GameMode } from '@/types/game';
+import { useWalletKit, ConnectButton } from '@mysten/wallet-kit';
 
 interface HeaderProps {
   balance: number;
@@ -7,6 +8,16 @@ interface HeaderProps {
 }
 
 export const Header = ({ balance, selectedMode }: HeaderProps) => {
+  const { disconnect, isConnected, currentAccount } = useWalletKit();
+
+  const handleDisconnect = async () => {
+    try {
+      await disconnect();
+    } catch (error) {
+      console.error('Failed to disconnect wallet:', error);
+    }
+  };
+
   return (
     <header className="w-full border-b border-white/10 bg-black/20 backdrop-blur-xl sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-6 h-20 flex justify-between items-center">
@@ -42,6 +53,22 @@ export const Header = ({ balance, selectedMode }: HeaderProps) => {
               <Coins size={18} />
             </div>
           </div>
+          {isConnected && currentAccount ? (
+            <button
+              onClick={handleDisconnect}
+              className="flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-bold text-sm shadow-lg transition-all hover:scale-105 border border-white/20"
+            >
+              <Wallet size={16} />
+              <span className="hidden sm:inline">
+                {`${currentAccount.address.slice(0, 6)}...${currentAccount.address.slice(-4)}`}
+              </span>
+              <span className="sm:hidden">Wallet</span>
+            </button>
+          ) : (
+            <div className="[&>button]:flex [&>button]:items-center [&>button]:gap-2 [&>button]:px-4 [&>button]:py-2 [&>button]:rounded-full [&>button]:bg-gradient-to-r [&>button]:from-purple-600 [&>button]:to-blue-600 [&>button]:hover:from-purple-500 [&>button]:hover:to-blue-500 [&>button]:text-white [&>button]:font-bold [&>button]:text-sm [&>button]:shadow-lg [&>button]:transition-all [&>button]:hover:scale-105 [&>button]:border [&>button]:border-white/20">
+              <ConnectButton />
+            </div>
+          )}
         </div>
       </div>
     </header>

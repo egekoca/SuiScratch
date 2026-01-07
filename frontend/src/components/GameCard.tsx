@@ -4,6 +4,7 @@ import { GameMode, GameState, GridSymbol, WinData } from '@/types/game';
 import { getGridClass, getSymbolSizeClass } from '@/utils/gridUtils';
 import { initCanvas } from '@/utils/canvasUtils';
 import { useScratch } from '@/hooks/useScratch';
+import { useWalletKit } from '@mysten/wallet-kit';
 
 interface GameCardProps {
   selectedMode: GameMode;
@@ -26,9 +27,18 @@ export const GameCard = ({
 }: GameCardProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const { isConnected } = useWalletKit();
 
   const { isDrawing, lastPoint, startScratch, moveScratch, endScratch, handleMouseEnter } =
     useScratch(canvasRef, gameState, onReveal);
+
+  const handleBuyTicket = () => {
+    if (!isConnected) {
+      alert('Please connect your wallet to play!');
+      return;
+    }
+    onBuyTicket();
+  };
 
   const handleInstantReveal = () => {
     if (canvasRef.current && gameState === 'PLAYING') {
@@ -206,20 +216,31 @@ export const GameCard = ({
                 </div>
               </div>
 
+              {!isConnected && (
+                <div className="mb-4 p-3 rounded-xl bg-yellow-500/20 border border-yellow-500/50 text-center">
+                  <p className="text-sm font-bold text-yellow-400">
+                    Please connect your wallet to play
+                  </p>
+                </div>
+              )}
               <button
-                onClick={onBuyTicket}
+                onClick={handleBuyTicket}
+                disabled={!isConnected}
                 className={`
                   group relative w-full py-4 px-6 rounded-2xl font-bold text-lg overflow-hidden
                   bg-gradient-to-r ${selectedMode.gradient} shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)]
                   transition-all hover:scale-[1.02] active:scale-[0.98]
+                  ${!isConnected ? 'opacity-50 cursor-not-allowed' : ''}
                 `}
               >
                 <div className="absolute inset-0 bg-white/20 group-hover:translate-x-full duration-1000 transition-transform skew-x-12 -ml-4"></div>
                 <div className="relative flex items-center justify-center gap-3">
-                  <span>Buy Ticket</span>
-                  <span className="bg-black/20 px-3 py-1 rounded-lg text-sm font-mono border border-white/10 group-hover:bg-black/30 transition-colors">
-                    {selectedMode.price} SUI
-                  </span>
+                  <span>{!isConnected ? 'Connect Wallet First' : 'Buy Ticket'}</span>
+                  {isConnected && (
+                    <span className="bg-black/20 px-3 py-1 rounded-lg text-sm font-mono border border-white/10 group-hover:bg-black/30 transition-colors">
+                      {selectedMode.price} SUI
+                    </span>
+                  )}
                 </div>
               </button>
             </div>
@@ -295,8 +316,9 @@ export const GameCard = ({
 
               {/* Right side - Buy Again button */}
               <button
-                onClick={onBuyTicket}
-                className={`bg-gradient-to-r ${selectedMode.gradient} text-white font-bold py-2 px-5 rounded-xl shadow-lg hover:scale-105 transition-transform flex items-center gap-2 text-sm flex-shrink-0 mr-2`}
+                onClick={handleBuyTicket}
+                disabled={!isConnected}
+                className={`bg-gradient-to-r ${selectedMode.gradient} text-white font-bold py-2 px-5 rounded-xl shadow-lg hover:scale-105 transition-transform flex items-center gap-2 text-sm flex-shrink-0 mr-2 ${!isConnected ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
                 Buy Again
               </button>
@@ -329,12 +351,13 @@ export const GameCard = ({
 
               {/* Right side - Buy Again button */}
               <div className="flex-1"></div>
-              <button
-                onClick={onBuyTicket}
-                className={`bg-gradient-to-r ${selectedMode.gradient} text-white font-bold py-2 px-5 rounded-xl shadow-lg hover:scale-105 transition-transform flex items-center gap-2 text-sm flex-shrink-0 mr-2`}
-              >
-                Buy Again
-              </button>
+                    <button
+                      onClick={handleBuyTicket}
+                      disabled={!isConnected}
+                      className={`bg-gradient-to-r ${selectedMode.gradient} text-white font-bold py-2 px-5 rounded-xl shadow-lg hover:scale-105 transition-transform flex items-center gap-2 text-sm flex-shrink-0 mr-2 ${!isConnected ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                      Buy Again
+                    </button>
             </div>
           </div>
         ))}
