@@ -8,12 +8,25 @@ module suiscratch::suiscratch {
     use sui::event;
     use sui::table::{Self, Table};
     use sui::clock::{Self, Clock};
+    use sui::random::{Self, Random, new_generator};
     use std::vector;
 
     /// Game mode types
     const STANDARD_MODE: u8 = 0;
     const GOLD_MODE: u8 = 1;
     const PLATINUM_MODE: u8 = 2;
+
+    /// Symbol IDs (must match frontend)
+    /// STANDARD: 0=DIAMOND, 1=DROP, 2=ROCKET, 3=COIN, 4=STAR (5 symbols)
+    /// GOLD: 0=DIAMOND, 1=DROP, 2=ROCKET, 3=COIN, 4=STAR, 5=CROWN (6 symbols)
+    /// PLATINUM: 0=DIAMOND, 1=DROP, 2=ROCKET, 3=COIN, 4=STAR, 5=CROWN, 6=SPARKLES (7 symbols)
+    const SYMBOL_DIAMOND: u8 = 0;
+    const SYMBOL_DROP: u8 = 1;
+    const SYMBOL_ROCKET: u8 = 2;
+    const SYMBOL_COIN: u8 = 3;
+    const SYMBOL_STAR: u8 = 4;
+    const SYMBOL_CROWN: u8 = 5;
+    const SYMBOL_SPARKLES: u8 = 6;
 
     /// Ticket prices in MIST (1 SUI = 1,000,000,000 MIST)
     /// Testnet prices (5x cheaper than mainnet)
@@ -41,6 +54,7 @@ module suiscratch::suiscratch {
         mode: u8,
         ticket_id: u64,
         timestamp: u64,
+        grid: vector<u8>, // Grid symbols generated on-chain (each u8 is a symbol ID)
         result_hash: vector<u8>, // Hash of game result for verification
         claimed: bool,
     }
@@ -81,11 +95,14 @@ module suiscratch::suiscratch {
     }
 
     /// Purchase a ticket for a specific game mode
-    public entry fun purchase_ticket(
+    /// Uses Sui's on-chain random number generator for fair randomness
+    /// Random is a global shared object at address 0x8
+    entry fun purchase_ticket(
         config: &mut GameConfig,
         payment: Coin<SUI>,
         mode: u8,
         clock: &Clock,
+        r: &Random, // Sui's global Random object (address 0x8)
         ctx: &mut TxContext
     ) {
         let price = get_ticket_price(mode);
@@ -103,12 +120,51 @@ module suiscratch::suiscratch {
         let player = tx_context::sender(ctx);
         let timestamp = clock::timestamp_ms(clock);
 
-        // Create ticket with empty result hash (will be set when game is played)
+        // Generate grid on-chain using Sui's random number generator
+        // This ensures fair and verifiable randomness - all symbols are determined on-chain
+        let generator = new_generator(r, ctx);
+        
+        // Get grid size based on mode
+        let grid_size = get_grid_size(mode);
+        let total_cells = grid_size * grid_size;
+        
+        // Get available symbols for this mode
+        let num_symbols = get_num_symbols(mode);
+        
+        // Generate grid: each cell gets a random symbol ID
+        // All symbols are randomly selected on-chain for fair and verifiable randomness
+        let grid = vector::empty<u8>();
+        let i = 0;
+        while (i < total_cells) {
+            // Generate random symbol index (0 to num_symbols-1)
+            // Weighted: DIAMOND (0) has 10% chance, others have equal chance
+            let rand = random::generate_u8_in_range(&mut generator, 0, 99);
+            let symbol_id: u8;
+            if (rand < 10) {
+                // 10% chance for DIAMOND
+                symbol_id = SYMBOL_DIAMOND;
+            } else {
+                // 90% chance distributed equally among other symbols (1 to num_symbols-1)
+                let other_symbols = num_symbols - 1;
+                if (other_symbols > 0) {
+                    // Use modulo to distribute evenly: (rand - 10) % other_symbols + 1
+                    let adjusted_rand = rand - 10; // 0-89 range
+                    symbol_id = (adjusted_rand % other_symbols) + 1; // 1 to num_symbols-1
+                } else {
+                    symbol_id = SYMBOL_DIAMOND;
+                };
+            };
+            vector::push_back(&mut grid, symbol_id);
+            i = i + 1;
+        };
+
+        // Create ticket with on-chain generated grid
         let ticket = Ticket {
             player,
             mode,
             ticket_id,
             timestamp,
+            grid,
             result_hash: vector::empty<u8>(),
             claimed: false,
         };
@@ -116,7 +172,7 @@ module suiscratch::suiscratch {
         // Store ticket in table
         table::add(&mut config.tickets, ticket_id, ticket);
 
-        // Emit purchase event
+        // Emit purchase event with random seed for frontend to use
         event::emit(TicketPurchased {
             player,
             mode,
@@ -133,7 +189,7 @@ module suiscratch::suiscratch {
     }
 
     /// Set game result hash for a ticket (called after game is played)
-    public entry fun set_result_hash(
+    entry fun set_result_hash(
         config: &mut GameConfig,
         ticket_id: u64,
         result_hash: vector<u8>,
@@ -158,7 +214,7 @@ module suiscratch::suiscratch {
 
     /// Set result hash and claim winnings in a single transaction
     /// This reduces wallet confirmations from 2 to 1
-    public entry fun set_result_and_claim(
+    entry fun set_result_and_claim(
         config: &mut GameConfig,
         ticket_id: u64,
         amount: u64,
@@ -209,7 +265,7 @@ module suiscratch::suiscratch {
 
     /// Claim winnings (called after game result is verified)
     /// @deprecated Use set_result_and_claim instead
-    public entry fun claim_winnings(
+    entry fun claim_winnings(
         config: &mut GameConfig,
         ticket_id: u64,
         amount: u64,
@@ -266,6 +322,32 @@ module suiscratch::suiscratch {
         }
     }
 
+    /// Get grid size for a mode
+    fun get_grid_size(mode: u8): u8 {
+        if (mode == STANDARD_MODE) {
+            3 // 3x3 = 9 cells
+        } else if (mode == GOLD_MODE) {
+            4 // 4x4 = 16 cells
+        } else if (mode == PLATINUM_MODE) {
+            5 // 5x5 = 25 cells
+        } else {
+            abort E_INVALID_MODE // Invalid mode
+        }
+    }
+
+    /// Get number of available symbols for a mode
+    fun get_num_symbols(mode: u8): u8 {
+        if (mode == STANDARD_MODE) {
+            5 // DIAMOND, DROP, ROCKET, COIN, STAR
+        } else if (mode == GOLD_MODE) {
+            6 // DIAMOND, DROP, ROCKET, COIN, STAR, CROWN
+        } else if (mode == PLATINUM_MODE) {
+            7 // DIAMOND, DROP, ROCKET, COIN, STAR, CROWN, SPARKLES
+        } else {
+            abort E_INVALID_MODE // Invalid mode
+        }
+    }
+
     /// Get total distributed amount
     public fun get_total_distributed(config: &GameConfig): u64 {
         config.total_distributed
@@ -282,6 +364,13 @@ module suiscratch::suiscratch {
         let ticket = table::borrow(&config.tickets, ticket_id);
         (ticket.player, ticket.mode, ticket.timestamp, ticket.claimed)
     }
+    
+    /// Get ticket grid (on-chain generated symbols)
+    public fun get_ticket_grid(config: &GameConfig, ticket_id: u64): vector<u8> {
+        assert!(table::contains(&config.tickets, ticket_id), E_TICKET_NOT_FOUND);
+        let ticket = table::borrow(&config.tickets, ticket_id);
+        *&ticket.grid
+    }
 
     /// Check if ticket exists
     public fun ticket_exists(config: &GameConfig, ticket_id: u64): bool {
@@ -296,7 +385,7 @@ module suiscratch::suiscratch {
     }
 
     /// Fund the treasury (for initial setup or adding more funds)
-    public entry fun fund_treasury(
+    entry fun fund_treasury(
         config: &mut GameConfig,
         payment: Coin<SUI>,
         _ctx: &mut TxContext
@@ -307,7 +396,7 @@ module suiscratch::suiscratch {
     }
 
     /// Withdraw from treasury (admin only)
-    public entry fun withdraw_from_treasury(
+    entry fun withdraw_from_treasury(
         config: &mut GameConfig,
         amount: u64,
         ctx: &mut TxContext

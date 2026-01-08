@@ -1,11 +1,12 @@
 import { useState, useCallback, useRef } from 'react';
 import { GameState, GameMode, GridSymbol, WinData } from '@/types/game';
 import { GAME_MODES } from '@/constants/gameModes';
-import { generateGrid } from '@/utils/gameLogic';
+import { generateGridFromContract } from '@/utils/gameLogic';
 import { useWalletKit } from '@mysten/wallet-kit';
 import { 
   purchaseTicket, 
   setResultAndClaimWinnings,
+  getTicketGrid,
   GAME_MODE, 
   suiToMist,
   calculateResultHash,
@@ -84,9 +85,21 @@ export const useGame = (toast?: ReturnType<typeof useToast>) => {
         currentTicketIdRef.current = ticketId;
       }
 
-      // Transaction successful - generate game grid
+      // Get grid from on-chain ticket (generated using Sui's random module)
+      // Grid is completely generated on-chain for fair and verifiable randomness
+      let gridSymbolIds: number[];
+      try {
+        gridSymbolIds = await getTicketGrid(ticketId);
+        console.log('🎲 Got grid from contract:', gridSymbolIds.length, 'symbols');
+      } catch (error: any) {
+        console.error('Failed to get grid from contract:', error);
+        toast?.error('Failed to load game grid. Please try again.');
+        return;
+      }
+
+      // Convert symbol IDs to grid symbols and calculate win data
       setGameState('READY');
-      const { grid, winData: newWinData } = generateGrid(selectedMode);
+      const { grid, winData: newWinData } = generateGridFromContract(selectedMode, gridSymbolIds);
       setGridSymbols(grid);
       setWinData(newWinData);
 
@@ -128,6 +141,15 @@ export const useGame = (toast?: ReturnType<typeof useToast>) => {
     if (winData && isConnected) {
       try {
         const ticketId = currentTicketIdRef.current;
+        
+        // Validate ticket ID
+        if (ticketId === BigInt(0)) {
+          console.error('❌ Invalid ticket ID: 0');
+          toast?.error('Invalid ticket ID. Please purchase a new ticket.');
+          return;
+        }
+        
+        console.log('🎫 Using ticket ID:', ticketId.toString());
         
         // Calculate result hash from game data
         const gridSymbolIds = gridSymbols.map(s => s.id);

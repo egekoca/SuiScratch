@@ -102,7 +102,8 @@ export const GameCard = ({
           `}
         >
           {/* 1. Result Grid */}
-          <div className="absolute inset-0 bg-slate-100 flex flex-col overflow-hidden">
+          {/* Grid Container - Behind canvas */}
+          <div className="absolute inset-0 bg-slate-100 flex flex-col overflow-hidden z-10">
             <div className="flex justify-between items-center px-3 pt-2 pb-1 opacity-50 flex-shrink-0">
               <div className="flex items-center gap-1 text-xs font-bold text-slate-400">
                 <Ticket size={12} /> {selectedMode.name.toUpperCase()}
@@ -172,11 +173,11 @@ export const GameCard = ({
           </div>
 
 
-          {/* 3. Canvas (Scratchable Area) */}
+          {/* 3. Canvas (Scratchable Area) - Must be on top of grid */}
           <canvas
             ref={canvasRef}
             className={`
-              absolute inset-0 z-30 touch-none w-full h-full
+              absolute inset-0 z-20 touch-none w-full h-full
               ${gameState === 'PLAYING' ? 'cursor-none' : ''}
               ${gameState === 'REVEALED' ? 'pointer-events-none' : ''}
             `}

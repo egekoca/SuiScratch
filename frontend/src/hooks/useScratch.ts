@@ -2,7 +2,7 @@ import { useRef, useState, useCallback, useEffect } from 'react';
 import { GameState } from '@/types/game';
 import { getPosition } from '@/utils/canvasUtils';
 
-const SCRATCH_PERCENTAGE_THRESHOLD = 1.0; // %100 - Full scratch required
+const SCRATCH_PERCENTAGE_THRESHOLD = 0.7; // %70 - Auto-reveal at 70%
 
 export const useScratch = (
   canvasRef: React.RefObject<HTMLCanvasElement>,

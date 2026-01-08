@@ -1,156 +1,44 @@
 import { GameMode, GridSymbol, WinData } from '@/types/game';
 import { BASE_SYMBOLS, STANDARD_SYMBOLS, GOLD_SYMBOLS, PLATINUM_SYMBOLS } from '@/constants/symbols';
 
-export const generateGrid = (selectedMode: GameMode): { grid: GridSymbol[]; winData: WinData } => {
+/**
+ * Generate grid from on-chain contract data
+ * Symbol IDs come directly from the contract (0-6)
+ */
+export const generateGridFromContract = (selectedMode: GameMode, symbolIds: number[]): { grid: GridSymbol[]; winData: WinData } => {
   const totalCells = selectedMode.gridSize * selectedMode.gridSize;
-  let grid: (GridSymbol | null)[] = Array(totalCells).fill(null);
-
-  const rand = Math.random();
-  let intendedScenario: 'LOSS' | 'SINGLE' | 'COMBO' = 'LOSS';
-  if (rand < 0.45) intendedScenario = 'SINGLE';
-  else if (rand < 0.60) intendedScenario = 'COMBO';
+  
+  // Validate grid size
+  if (symbolIds.length !== totalCells) {
+    console.error(`Grid size mismatch: expected ${totalCells}, got ${symbolIds.length}`);
+    throw new Error(`Invalid grid size: expected ${totalCells} cells, got ${symbolIds.length}`);
+  }
 
   // Get available symbols for this game mode
   let winningKeys: string[];
   if (selectedMode.id === 'STANDARD') {
-    winningKeys = STANDARD_SYMBOLS;
+    winningKeys = STANDARD_SYMBOLS; // 5 symbols: 0-4
   } else if (selectedMode.id === 'GOLD') {
-    winningKeys = GOLD_SYMBOLS;
+    winningKeys = GOLD_SYMBOLS; // 6 symbols: 0-5
   } else {
-    winningKeys = PLATINUM_SYMBOLS;
+    winningKeys = PLATINUM_SYMBOLS; // 7 symbols: 0-6
   }
 
-  if (intendedScenario !== 'LOSS') {
-    const numWinningSymbols = intendedScenario === 'COMBO' ? 2 : 1;
-    const chosenWinningKeys: string[] = [];
-
-    // Weighted selection based on available symbols
-    const getWeightedSymbol = (): string => {
-      const rand = Math.random();
-      // DIAMOND has lower chance, others have equal chance
-      if (winningKeys.includes('DIAMOND')) {
-        if (rand < 0.1) return 'DIAMOND'; // 10% chance
-        const otherSymbols = winningKeys.filter(k => k !== 'DIAMOND');
-        const equalChance = 0.9 / otherSymbols.length;
-        let cumulative = 0.1;
-        for (const sym of otherSymbols) {
-          cumulative += equalChance;
-          if (rand < cumulative) return sym;
-        }
-      }
-      // If no DIAMOND, equal chance for all
-      return winningKeys[Math.floor(Math.random() * winningKeys.length)];
-    };
-
-    while (chosenWinningKeys.length < numWinningSymbols) {
-      const key = getWeightedSymbol();
-      if (!chosenWinningKeys.includes(key)) chosenWinningKeys.push(key);
+  // Map symbol IDs to symbol keys
+  const symbolIdToKey = (symbolId: number): string => {
+    if (symbolId < winningKeys.length) {
+      return winningKeys[symbolId];
     }
+    // Fallback to first symbol if ID is out of range
+    console.warn(`Invalid symbol ID ${symbolId} for mode ${selectedMode.id}, using first symbol`);
+    return winningKeys[0];
+  };
 
-    chosenWinningKeys.forEach((key) => {
-      const sym = BASE_SYMBOLS[key];
-      const payouts = selectedMode.payouts;
-      const possibleMatches = Object.keys(payouts)
-        .map(Number)
-        .sort((a, b) => a - b);
-
-      const currentEmpty = grid.filter((c) => c === null).length;
-      if (currentEmpty < possibleMatches[0]) return;
-
-      let matchCount = possibleMatches[0];
-      const r = Math.random();
-      const maxPossible = Math.min(currentEmpty, possibleMatches[possibleMatches.length - 1]);
-
-      if (maxPossible > matchCount) {
-        if (r > 0.85) matchCount = maxPossible;
-        else if (r > 0.6) matchCount = Math.min(currentEmpty, matchCount + 1);
-      }
-
-      let placed = 0;
-      let emptyIndices = grid
-        .map((val, idx) => (val === null ? idx : null))
-        .filter((val) => val !== null) as number[];
-      while (placed < matchCount && emptyIndices.length > 0) {
-        const randIndex = Math.floor(Math.random() * emptyIndices.length);
-        const gridIndex = emptyIndices[randIndex];
-        grid[gridIndex] = sym;
-        emptyIndices.splice(randIndex, 1);
-        placed++;
-      }
-    });
-  }
-
-  // Fill remaining cells with only winning symbols
-  // In LOSS scenario, ensure no symbol reaches matchReq (so no win occurs)
-  // In WIN scenarios, fill with random winning symbols (already have enough for a win)
-  for (let i = 0; i < totalCells; i++) {
-    if (!grid[i]) {
-      if (intendedScenario === 'LOSS') {
-        // Count current symbols to ensure we don't accidentally create a win
-        const currentCounts: Record<string, number> = {};
-        grid.forEach((sym) => {
-          if (sym && winningKeys.includes(sym.id)) {
-            currentCounts[sym.id] = (currentCounts[sym.id] || 0) + 1;
-          }
-        });
-
-        // Choose a winning symbol that won't reach matchReq
-        const availableSymbols = winningKeys.filter((key) => {
-          const currentCount = currentCounts[key] || 0;
-          return currentCount < selectedMode.matchReq - 1;
-        });
-
-        // If all symbols are at max (matchReq - 1), randomly choose any winning symbol
-        // This ensures variety but no win
-        // Use weighted selection (DIAMOND less likely)
-        const getWeightedSymbol = (): string => {
-          const rand = Math.random();
-          if (winningKeys.includes('DIAMOND')) {
-            if (rand < 0.1) return 'DIAMOND'; // 10% chance
-            const otherSymbols = winningKeys.filter(k => k !== 'DIAMOND');
-            const equalChance = 0.9 / otherSymbols.length;
-            let cumulative = 0.1;
-            for (const sym of otherSymbols) {
-              cumulative += equalChance;
-              if (rand < cumulative) return sym;
-            }
-          }
-          return winningKeys[Math.floor(Math.random() * winningKeys.length)];
-        };
-
-        if (availableSymbols.length === 0) {
-          const randomKey = getWeightedSymbol();
-          grid[i] = BASE_SYMBOLS[randomKey];
-        } else {
-          // Filter available symbols with weighted selection
-          const weightedAvailable = availableSymbols.flatMap((key) => {
-            if (key === 'DIAMOND') return [key]; // 1x weight
-            return [key, key, key]; // 3x weight for others
-          });
-          const randomKey = weightedAvailable[Math.floor(Math.random() * weightedAvailable.length)];
-          grid[i] = BASE_SYMBOLS[randomKey];
-        }
-      } else {
-        // For WIN scenarios, fill with weighted random winning symbols (DIAMOND less likely)
-        const getWeightedSymbol = (): string => {
-          const rand = Math.random();
-          if (winningKeys.includes('DIAMOND')) {
-            if (rand < 0.1) return 'DIAMOND'; // 10% chance
-            const otherSymbols = winningKeys.filter(k => k !== 'DIAMOND');
-            const equalChance = 0.9 / otherSymbols.length;
-            let cumulative = 0.1;
-            for (const sym of otherSymbols) {
-              cumulative += equalChance;
-              if (rand < cumulative) return sym;
-            }
-          }
-          return winningKeys[Math.floor(Math.random() * winningKeys.length)];
-        };
-        const randomWinningKey = getWeightedSymbol();
-        grid[i] = BASE_SYMBOLS[randomWinningKey];
-      }
-    }
-  }
+  // Convert symbol IDs to grid symbols
+  const grid: GridSymbol[] = symbolIds.map((symbolId) => {
+    const symbolKey = symbolIdToKey(symbolId);
+    return BASE_SYMBOLS[symbolKey];
+  });
 
   const counts: Record<string, number> = {};
   grid.forEach((sym) => {
