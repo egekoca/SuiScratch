@@ -10,11 +10,13 @@ import {
   mistToSui 
 } from '@/utils/contract';
 import { useTransaction } from '@/hooks/useTransaction';
+import { useToast } from '@/hooks/useToast';
 
 const ADMIN_ADDRESS = '0x25ad5635da6045902f6d7abcba29c8596d4985da89a4895444ddadcbdf96f061';
 
 export const AdminPanel = () => {
   const { signAndExecuteTransactionBlock, isConnected, currentAccount } = useWalletKit();
+  const toast = useToast();
   const fundTransaction = useTransaction();
   const withdrawTransaction = useTransaction();
   
@@ -38,8 +40,9 @@ export const AdminPanel = () => {
       ]);
       setTreasuryBalance(mistToSui(balance));
       setTotalDistributed(mistToSui(distributed));
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching data:', error);
+      toast.error('Failed to refresh data. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -56,13 +59,13 @@ export const AdminPanel = () => {
 
   const handleFund = async () => {
     if (!isAdmin) {
-      alert('Only admin can fund treasury');
+      toast.error('Only admin can fund treasury');
       return;
     }
 
     const amountNum = parseFloat(fundAmount);
     if (isNaN(amountNum) || amountNum <= 0) {
-      alert('Please enter a valid amount');
+      toast.warning('Please enter a valid amount');
       return;
     }
 
@@ -73,30 +76,32 @@ export const AdminPanel = () => {
       });
 
       if (txHash) {
-        alert(`Successfully funded treasury with ${amountNum} SUI!`);
+        toast.success(`Successfully funded treasury with ${amountNum} SUI!`);
         setFundAmount('10');
         await refreshData();
+      } else if (fundTransaction.error) {
+        toast.error(fundTransaction.error);
       }
     } catch (error: any) {
       console.error('Error funding treasury:', error);
-      alert(error?.message || 'Failed to fund treasury. Please try again.');
+      toast.error(error?.message || 'Failed to fund treasury. Please try again.');
     }
   };
 
   const handleWithdraw = async () => {
     if (!isAdmin) {
-      alert('Only admin can withdraw from treasury');
+      toast.error('Only admin can withdraw from treasury');
       return;
     }
 
     const amountNum = parseFloat(withdrawAmount);
     if (isNaN(amountNum) || amountNum <= 0) {
-      alert('Please enter a valid amount');
+      toast.warning('Please enter a valid amount');
       return;
     }
 
     if (amountNum > treasuryBalance) {
-      alert('Insufficient treasury balance');
+      toast.error('Insufficient treasury balance');
       return;
     }
 
@@ -107,13 +112,22 @@ export const AdminPanel = () => {
       });
 
       if (txHash) {
-        alert(`Successfully withdrew ${amountNum} SUI from treasury!`);
+        toast.success(`Successfully withdrew ${amountNum} SUI from treasury!`);
         setWithdrawAmount('10');
         await refreshData();
+      } else if (withdrawTransaction.error) {
+        toast.error(withdrawTransaction.error);
       }
     } catch (error: any) {
       console.error('Error withdrawing from treasury:', error);
-      alert(error?.message || 'Failed to withdraw from treasury. Please try again.');
+      let errorMessage = error?.message || 'Failed to withdraw from treasury. Please try again.';
+      
+      // Provide more helpful error messages
+      if (errorMessage.includes('InsufficientCoinBalance') || errorMessage.includes('Insufficient gas')) {
+        errorMessage = 'Insufficient gas balance. Please ensure your wallet has at least 0.01 SUI for transaction fees.';
+      }
+      
+      toast.error(errorMessage);
     }
   };
 

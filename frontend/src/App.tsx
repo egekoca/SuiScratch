@@ -5,10 +5,13 @@ import { PayoutTable } from '@/components/PayoutTable';
 import { RecentWinners } from '@/components/RecentWinners';
 import { Confetti } from '@/components/Confetti';
 import { AdminPanel } from '@/components/AdminPanel';
+import { ToastContainer } from '@/components/Toast';
+import { useToast } from '@/hooks/useToast';
 import { useGame } from '@/hooks/useGame';
 import { useEffect, useRef, useState } from 'react';
 
 function App() {
+  const toast = useToast();
   const {
     balance,
     selectedMode,
@@ -23,7 +26,7 @@ function App() {
     purchaseError,
     claimLoading,
     claimError,
-  } = useGame();
+  } = useGame(toast);
   
   const [showConfetti, setShowConfetti] = useState(false);
   const prevWinAmountRef = useRef<number>(0);
@@ -103,6 +106,7 @@ function App() {
               purchaseError={purchaseError}
               claimLoading={claimLoading}
               claimError={claimError}
+              toast={toast}
             />
           </div>
 
@@ -124,6 +128,9 @@ function App() {
 
       {/* Admin Panel (Only visible to admin wallet) */}
       <AdminPanel />
+
+      {/* Toast Notifications */}
+      <ToastContainer toasts={toast.toasts} onClose={toast.removeToast} />
     </div>
   );
 }

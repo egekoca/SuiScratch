@@ -5,16 +5,16 @@ import { generateGrid } from '@/utils/gameLogic';
 import { useWalletKit } from '@mysten/wallet-kit';
 import { 
   purchaseTicket, 
-  claimWinnings, 
-  setResultHash,
+  setResultAndClaimWinnings,
   GAME_MODE, 
   suiToMist,
   calculateResultHash,
 } from '@/utils/contract';
 import { useTransaction } from './useTransaction';
 import { useWalletBalance } from './useWalletBalance';
+import { useToast } from './useToast';
 
-export const useGame = () => {
+export const useGame = (toast?: ReturnType<typeof useToast>) => {
   const { signAndExecuteTransactionBlock, isConnected } = useWalletKit();
   const { balance: walletBalance, refresh: refreshBalance } = useWalletBalance();
   const purchaseTransaction = useTransaction();
@@ -39,12 +39,12 @@ export const useGame = () => {
 
   const buyTicket = useCallback(async () => {
     if (!isConnected) {
-      alert('Please connect your wallet first!');
+      toast?.error('Please connect your wallet first!');
       return;
     }
 
     if (walletBalance < selectedMode.price) {
-      alert('Insufficient Balance!');
+      toast?.error('Insufficient Balance!');
       return;
     }
 
@@ -101,9 +101,9 @@ export const useGame = () => {
       }, 10);
     } catch (error: any) {
       console.error('Error purchasing ticket:', error);
-      alert(error?.message || 'Failed to purchase ticket. Please try again.');
+      toast?.error(error?.message || 'Failed to purchase ticket. Please try again.');
     }
-  }, [walletBalance, selectedMode, isConnected, signAndExecuteTransactionBlock, purchaseTransaction, refreshBalance]);
+  }, [walletBalance, selectedMode, isConnected, signAndExecuteTransactionBlock, purchaseTransaction, refreshBalance, toast]);
 
   const resetGame = useCallback((force = false) => {
     setGameState('IDLE');
@@ -119,9 +119,12 @@ export const useGame = () => {
   }, [selectedMode, purchaseTransaction, claimTransaction]);
 
   const revealGame = useCallback(async () => {
+    // Only reveal if game is still in PLAYING state (prevent double reveal)
+    if (gameState !== 'PLAYING') return;
+    
     setGameState('REVEALED');
     
-    // If user won, set result hash and claim winnings from contract
+    // Automatically claim winnings if user won
     if (winData && isConnected) {
       try {
         const ticketId = currentTicketIdRef.current;
@@ -134,38 +137,53 @@ export const useGame = () => {
           gridSymbolIds
         );
 
-        // Set result hash first (if win) or just mark as played (if loss)
+        // Set result hash and claim winnings in a single transaction (if win)
         if (winData.isWin && winData.totalAmount > 0) {
-          // Set result hash
-          await setResultHash(ticketId, resultHash, signAndExecuteTransactionBlock);
+          console.log('🎉 Processing win:', {
+            ticketId: ticketId.toString(),
+            amount: winData.totalAmount,
+            hashLength: resultHash.length,
+          });
 
-          // Claim winnings
+          // Set result hash and claim winnings in one transaction
+          // This requires only ONE wallet confirmation instead of two
           const amountInMist = suiToMist(winData.totalAmount);
           const txHash = await claimTransaction.execute(async () => {
-            return await claimWinnings(ticketId, amountInMist, resultHash, signAndExecuteTransactionBlock);
+            return await setResultAndClaimWinnings(ticketId, amountInMist, resultHash, signAndExecuteTransactionBlock);
           });
 
           if (txHash) {
+            console.log('✅ Winnings claimed successfully! Transaction:', txHash);
             // Refresh wallet balance after claiming
             await refreshBalance();
+            toast?.success(
+              `🎉 Congratulations! ${winData.totalAmount} SUI has been sent to your wallet!`,
+              8000
+            );
+          } else {
+            console.error('❌ Failed to claim winnings - no transaction hash returned');
+            toast?.error(
+              `Failed to claim winnings. Please try again.\n${claimTransaction.error || 'Unknown error'}`,
+              8000
+            );
           }
         } else {
-          // For losses, we can optionally set a hash indicating loss
-          const lossHash = await calculateResultHash(0, ticketId, gridSymbolIds);
-          try {
-            await setResultHash(ticketId, lossHash, signAndExecuteTransactionBlock);
-          } catch (error) {
-            // Ignore errors for loss tickets (optional)
-            console.log('Loss ticket hash set (optional)');
-          }
+          // For losses, we don't need to do anything
+          // The ticket will remain unclaimed
+          console.log('💔 Loss detected - no action needed');
         }
       } catch (error: any) {
-        console.error('Error processing game result:', error);
-        // Don't show alert here, let the user see the win notification
-        // They can manually retry if needed
+        console.error('❌ Error processing game result:', error);
+        toast?.error(
+          `Error processing game result: ${error?.message || 'Unknown error'}\nPlease try again.`,
+          8000
+        );
       }
+    } else if (winData && !isConnected) {
+      console.warn('⚠️ User won but wallet is not connected');
+      toast?.warning('Please connect your wallet to claim your winnings!');
     }
-  }, [winData, gridSymbols, isConnected, signAndExecuteTransactionBlock, claimTransaction, refreshBalance]);
+  }, [gameState, winData, gridSymbols, isConnected, signAndExecuteTransactionBlock, claimTransaction, refreshBalance, toast]);
 
   return {
     balance: walletBalance,

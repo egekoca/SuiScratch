@@ -1,6 +1,6 @@
+/// <reference types="vite/client" />
 import { TransactionBlock } from '@mysten/sui.js/transactions';
 import { suiClient, CONTRACT_PACKAGE_ID, CONTRACT_GAME_CONFIG_ID } from '@/config/sui';
-import { fromB64 } from '@mysten/sui.js/utils';
 
 // Game mode constants (must match Move contract)
 export const GAME_MODE = {
@@ -28,23 +28,13 @@ export interface Ticket {
 }
 
 /**
- * Calculate hash of game result for verification
- * Uses SHA-256 for secure hashing
+ * Calculate SHA-256 hash of game result for verification
  */
-export const calculateResultHash = async (
-  winAmount: number, 
-  ticketId: bigint, 
-  gridSymbols: string[]
-): Promise<Uint8Array> => {
-  // Create a deterministic hash from game result
-  // Format: "ticketId:winAmount:symbol1,symbol2,..."
-  const resultString = `${ticketId}:${winAmount.toFixed(2)}:${gridSymbols.join(',')}`;
-  
-  // Use Web Crypto API for SHA-256 hashing
+export const calculateResultHash = async (winAmount: number, ticketId: bigint, gridSymbolIds: string[]): Promise<Uint8Array> => {
+  const resultString = `${ticketId}:${winAmount}:${gridSymbolIds.join(',')}`;
   const encoder = new TextEncoder();
   const data = encoder.encode(resultString);
   const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  
   return new Uint8Array(hashBuffer);
 };
 
@@ -115,7 +105,7 @@ export const purchaseTicket = async (
   
   // Call purchase_ticket function with Clock object
   tx.moveCall({
-    target: `${CONTRACT_PACKAGE_ID}::suiscratch::purchase_ticket`,
+    target: `${CONTRACT_PACKAGE_ID}::suiscratch::purchase_ticket` as `${string}::${string}::${string}`,
     arguments: [
       tx.object(CONTRACT_GAME_CONFIG_ID),
       coin,
@@ -172,13 +162,19 @@ export const setResultHash = async (
   // Convert Uint8Array to vector<u8> for Move
   const hashVector = Array.from(resultHash);
   
+  console.log('📝 Setting result hash:', {
+    ticketId: ticketId.toString(),
+    hashLength: hashVector.length,
+    hashPreview: hashVector.slice(0, 10),
+  });
+  
   // Call set_result_hash function
   tx.moveCall({
     target: `${CONTRACT_PACKAGE_ID}::suiscratch::set_result_hash`,
     arguments: [
       tx.object(CONTRACT_GAME_CONFIG_ID),
       tx.pure.u64(ticketId),
-      tx.pure('vector<u8>', hashVector),
+      tx.pure(hashVector),
     ],
   });
 
@@ -187,7 +183,63 @@ export const setResultHash = async (
 };
 
 /**
+ * Set result hash and claim winnings in a single transaction
+ * This uses a single Move function call, requiring only ONE wallet confirmation
+ */
+export const setResultAndClaimWinnings = async (
+  ticketId: bigint,
+  amountInMist: bigint,
+  resultHash: Uint8Array,
+  signAndExecuteTransactionBlock: any
+): Promise<string> => {
+  if (!CONTRACT_PACKAGE_ID || !CONTRACT_GAME_CONFIG_ID) {
+    throw new Error('Contract not configured. Please set VITE_CONTRACT_PACKAGE_ID and VITE_CONTRACT_GAME_CONFIG_ID');
+  }
+
+  console.log('💰 Setting result and claiming winnings in one transaction:', {
+    ticketId: ticketId.toString(),
+    amountInMist: amountInMist.toString(),
+    amountInSui: Number(amountInMist) / 1_000_000_000,
+    hashLength: resultHash.length,
+  });
+
+  const tx = new TransactionBlock();
+  
+  // Convert Uint8Array to vector<u8> for Move
+  const hashVector = Array.from(resultHash);
+  
+  // Single Move function call that does both: set hash and claim winnings
+  // This requires only ONE wallet confirmation
+  tx.moveCall({
+    target: `${CONTRACT_PACKAGE_ID}::suiscratch::set_result_and_claim` as `${string}::${string}::${string}`,
+    arguments: [
+      tx.object(CONTRACT_GAME_CONFIG_ID),
+      tx.pure.u64(ticketId),
+      tx.pure.u64(amountInMist),
+      tx.pure(hashVector),
+    ],
+  });
+
+  console.log('📤 Sending single transaction...');
+  try {
+    const result = await signAndExecuteTransactionBlock({ 
+      transactionBlock: tx,
+      options: {
+        showEffects: true,
+        showEvents: true,
+      },
+    });
+    console.log('✅ Transaction successful:', result.digest);
+    return result.digest;
+  } catch (error: any) {
+    console.error('❌ Transaction failed:', error);
+    throw error;
+  }
+};
+
+/**
  * Claim winnings after a win (with result hash verification)
+ * @deprecated Use setResultAndClaimWinnings instead to reduce wallet confirmations
  */
 export const claimWinnings = async (
   ticketId: bigint,
@@ -199,6 +251,15 @@ export const claimWinnings = async (
     throw new Error('Contract not configured. Please set VITE_CONTRACT_PACKAGE_ID and VITE_CONTRACT_GAME_CONFIG_ID');
   }
 
+  console.log('💰 Claiming winnings:', {
+    ticketId: ticketId.toString(),
+    amountInMist: amountInMist.toString(),
+    amountInSui: Number(amountInMist) / 1_000_000_000,
+    hashLength: resultHash.length,
+    packageId: CONTRACT_PACKAGE_ID,
+    gameConfigId: CONTRACT_GAME_CONFIG_ID,
+  });
+
   const tx = new TransactionBlock();
   
   // Convert Uint8Array to vector<u8> for Move
@@ -206,17 +267,30 @@ export const claimWinnings = async (
   
   // Call claim_winnings function with result hash
   tx.moveCall({
-    target: `${CONTRACT_PACKAGE_ID}::suiscratch::claim_winnings`,
+    target: `${CONTRACT_PACKAGE_ID}::suiscratch::claim_winnings` as `${string}::${string}::${string}`,
     arguments: [
       tx.object(CONTRACT_GAME_CONFIG_ID),
       tx.pure.u64(ticketId),
       tx.pure.u64(amountInMist),
-      tx.pure('vector<u8>', hashVector),
+      tx.pure(hashVector),
     ],
   });
 
-  const result = await signAndExecuteTransactionBlock({ transactionBlock: tx });
-  return result.digest;
+  console.log('📤 Sending claim transaction...');
+  try {
+    const result = await signAndExecuteTransactionBlock({ 
+      transactionBlock: tx,
+      options: {
+        showEffects: true,
+        showEvents: true,
+      },
+    });
+    console.log('✅ Claim transaction successful:', result.digest);
+    return result.digest;
+  } catch (error: any) {
+    console.error('❌ Claim transaction failed:', error);
+    throw error;
+  }
 };
 
 /**
@@ -238,6 +312,7 @@ export const getGameConfig = async (): Promise<GameConfig | null> => {
 
     if (object.data?.content && 'fields' in object.data.content) {
       const fields = object.data.content.fields as any;
+      console.log('📋 GameConfig fields structure:', fields);
       return {
         id: CONTRACT_GAME_CONFIG_ID,
         treasury: fields.treasury || '0',
@@ -274,48 +349,25 @@ export const getTreasuryBalance = async (): Promise<bigint> => {
 
     if (object.data?.content && 'fields' in object.data.content) {
       const fields = object.data.content.fields as any;
+      console.log('📋 Treasury structure:', fields.treasury);
       
-      // Debug: Log the structure to understand how Balance is stored
-      console.log('📋 GameConfig fields structure:', JSON.stringify(fields, null, 2));
-      
-      // Treasury is a Balance<SUI> object
-      // In Sui, Balance objects in structs are stored inline with their value field
+      // Treasury is a Balance<SUI> object, we need to read its value
       if (fields.treasury) {
-        // Try different possible structures
-        if (typeof fields.treasury === 'object' && fields.treasury !== null) {
-          // Check if it has a direct 'value' field (most common)
-          if ('value' in fields.treasury) {
-            const value = fields.treasury.value;
-            if (typeof value === 'string') {
-              return BigInt(value);
-            }
-            if (typeof value === 'number') {
-              return BigInt(value);
-            }
+        // Treasury field might be an object reference or nested structure
+        if (typeof fields.treasury === 'object' && 'fields' in fields.treasury) {
+          const treasuryFields = fields.treasury.fields as any;
+          if (treasuryFields.value) {
+            return BigInt(treasuryFields.value);
           }
-          
-          // Check if it has nested 'fields' with 'value'
-          if ('fields' in fields.treasury) {
-            const treasuryFields = fields.treasury.fields as any;
-            if (treasuryFields?.value !== undefined) {
-              return BigInt(treasuryFields.value);
-            }
-          }
-          
-          // Log the structure for debugging
-          console.log('📋 Treasury structure:', JSON.stringify(fields.treasury, null, 2));
         }
         
-        // Alternative: Treasury might be stored as a string (unlikely but possible)
+        // Alternative: Treasury might be stored as a string
         if (typeof fields.treasury === 'string') {
           return BigInt(fields.treasury);
         }
       }
     }
 
-    // Fallback: Try to get balance using suiClient.getBalance
-    // But this won't work for Balance objects in structs
-    
     return BigInt(0);
   } catch (error) {
     console.error('Error fetching treasury balance:', error);
@@ -372,7 +424,7 @@ export const fundTreasury = async (
   });
   
   tx.moveCall({
-    target: moveCallTarget,
+    target: moveCallTarget as `${string}::${string}::${string}`,
     arguments: [
       tx.object(CONTRACT_GAME_CONFIG_ID),
       coin,
@@ -392,7 +444,6 @@ export const fundTreasury = async (
     return result.digest;
   } catch (error: any) {
     console.error('❌ Transaction failed:', error);
-    // Check if error is about package not existing
     if (error.message?.includes('Package object does not exist') || error.message?.includes('does not exist with ID')) {
       throw new Error(`Package ${CONTRACT_PACKAGE_ID} does not exist on the network your wallet is connected to.\n\nPlease ensure:\n1. Your wallet is connected to ${import.meta.env.VITE_SUI_NETWORK}\n2. The package is deployed on ${import.meta.env.VITE_SUI_NETWORK}\n3. Check your wallet's network settings (should be ${import.meta.env.VITE_SUI_NETWORK})`);
     }
@@ -430,17 +481,36 @@ export const withdrawFromTreasury = async (
 
   const tx = new TransactionBlock();
   
+  // Set gas budget explicitly to ensure sufficient gas
+  tx.setGasBudget(10000000); // 0.01 SUI for gas (should be enough)
+  
   // Call withdraw_from_treasury function
   tx.moveCall({
-    target: `${CONTRACT_PACKAGE_ID}::suiscratch::withdraw_from_treasury`,
+    target: `${CONTRACT_PACKAGE_ID}::suiscratch::withdraw_from_treasury` as `${string}::${string}::${string}`,
     arguments: [
       tx.object(CONTRACT_GAME_CONFIG_ID),
       tx.pure.u64(amountInMist),
     ],
   });
 
-  const result = await signAndExecuteTransactionBlock({ transactionBlock: tx });
-  return result.digest;
+  console.log('📤 Sending withdraw transaction...');
+  try {
+    const result = await signAndExecuteTransactionBlock({ 
+      transactionBlock: tx,
+      options: {
+        showEffects: true,
+        showEvents: true,
+      },
+    });
+    console.log('✅ Withdraw transaction successful:', result.digest);
+    return result.digest;
+  } catch (error: any) {
+    console.error('❌ Withdraw transaction failed:', error);
+    if (error.message?.includes('InsufficientCoinBalance')) {
+      throw new Error('Insufficient gas balance. Please ensure your wallet has at least 0.01 SUI for transaction fees.');
+    }
+    throw error;
+  }
 };
 
 /**
@@ -464,31 +534,22 @@ export const getTotalDistributed = async (): Promise<bigint> => {
 
     if (object.data?.content && 'fields' in object.data.content) {
       const fields = object.data.content.fields as any;
+      console.log('📋 Total Distributed structure:', fields.total_distributed);
       
-      // total_distributed is a u64 field - should be directly readable
+      // total_distributed is a u64 field
       if (fields.total_distributed !== undefined) {
-        // Convert to bigint - handle different formats
         if (typeof fields.total_distributed === 'string') {
           return BigInt(fields.total_distributed);
         }
         if (typeof fields.total_distributed === 'number') {
           return BigInt(fields.total_distributed);
         }
-        // Sometimes it's stored as a nested object (unlikely for u64, but check anyway)
-        if (typeof fields.total_distributed === 'object' && fields.total_distributed !== null) {
-          if ('fields' in fields.total_distributed) {
-            const nestedFields = fields.total_distributed.fields as any;
-            if (nestedFields?.value !== undefined) {
-              return BigInt(nestedFields.value);
-            }
-          }
-          // Check for direct value field
-          if ('value' in fields.total_distributed) {
-            return BigInt(fields.total_distributed.value);
+        if (typeof fields.total_distributed === 'object' && 'fields' in fields.total_distributed) {
+          const nestedFields = fields.total_distributed.fields as any;
+          if (nestedFields.value !== undefined) {
+            return BigInt(nestedFields.value);
           }
         }
-      } else {
-        console.warn('⚠️ total_distributed field not found in GameConfig');
       }
     }
 
@@ -502,40 +563,13 @@ export const getTotalDistributed = async (): Promise<bigint> => {
 /**
  * Get ticket information
  */
-export const getTicket = async (ticketId: bigint): Promise<Ticket | null> => {
+export const getTicket = async (_ticketId: bigint): Promise<Ticket | null> => {
   if (!CONTRACT_PACKAGE_ID || !CONTRACT_GAME_CONFIG_ID) {
     return null;
   }
 
   try {
-    const result = await suiClient.devInspectTransactionBlock({
-      sender: '0x0000000000000000000000000000000000000000000000000000000000000000',
-      transactionBlock: {
-        kind: 'moveCall',
-        data: {
-          package: CONTRACT_PACKAGE_ID,
-          module: 'suiscratch',
-          function: 'get_ticket',
-          arguments: [CONTRACT_GAME_CONFIG_ID, ticketId.toString()],
-        },
-      },
-    });
-
-    if (result.results && result.results[0]?.returnValues) {
-      const returnValue = result.results[0].returnValues[0];
-      if (returnValue) {
-        // Parse the return tuple (address, u8, u64, bool)
-        // This is complex, for now return a simple structure
-        return {
-          player: '',
-          mode: 0,
-          ticket_id: ticketId.toString(),
-          timestamp: '0',
-          claimed: false,
-        };
-      }
-    }
-
+    // This requires dynamic field access, which is not directly supported by getObject
     return null;
   } catch (error) {
     console.error('Error fetching ticket:', error);
@@ -557,4 +591,3 @@ export const mistToSui = (mist: bigint | string): number => {
   const mistBigInt = typeof mist === 'string' ? BigInt(mist) : mist;
   return Number(mistBigInt) / 1_000_000_000;
 };
-

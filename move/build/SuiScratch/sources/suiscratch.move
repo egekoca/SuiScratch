@@ -156,7 +156,59 @@ module suiscratch::suiscratch {
         ticket.result_hash = result_hash;
     }
 
+    /// Set result hash and claim winnings in a single transaction
+    /// This reduces wallet confirmations from 2 to 1
+    public entry fun set_result_and_claim(
+        config: &mut GameConfig,
+        ticket_id: u64,
+        amount: u64,
+        result_hash: vector<u8>,
+        ctx: &mut TxContext
+    ) {
+        let player = tx_context::sender(ctx);
+        
+        // Get ticket
+        assert!(table::contains(&config.tickets, ticket_id), E_TICKET_NOT_FOUND);
+        let ticket = table::borrow_mut(&mut config.tickets, ticket_id);
+        
+        // Verify ticket belongs to player
+        assert!(ticket.player == player, E_UNAUTHORIZED);
+        
+        // Verify ticket is not already claimed
+        assert!(!ticket.claimed, E_TICKET_ALREADY_CLAIMED);
+        
+        // Set result hash (only if not already set)
+        if (std::vector::length(&ticket.result_hash) == 0) {
+            ticket.result_hash = result_hash;
+        };
+        
+        // Verify result hash matches
+        assert!(ticket.result_hash == result_hash, E_INVALID_RESULT_HASH);
+        
+        // Verify treasury has enough balance
+        assert!(balance::value(&config.treasury) >= amount, E_INSUFFICIENT_TREASURY);
+
+        // Mark ticket as claimed
+        ticket.claimed = true;
+
+        // Transfer winnings
+        let winnings_balance = balance::split(&mut config.treasury, amount);
+        let winnings = coin::from_balance(winnings_balance, ctx);
+        transfer::public_transfer(winnings, player);
+
+        // Update statistics
+        config.total_distributed = config.total_distributed + amount;
+
+        // Emit win event
+        event::emit(WinEvent {
+            player,
+            amount,
+            ticket_id,
+        });
+    }
+
     /// Claim winnings (called after game result is verified)
+    /// @deprecated Use set_result_and_claim instead
     public entry fun claim_winnings(
         config: &mut GameConfig,
         ticket_id: u64,

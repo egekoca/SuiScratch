@@ -18,13 +18,6 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <WalletKitProvider
       preferredWallets={['Sui Wallet', 'Suiet']}
-      networks={[
-        {
-          name: networkConfig.network,
-          rpcUrl: networkConfig.url,
-        },
-      ]}
-      defaultNetwork={networkConfig.network}
     >
       <App />
     </WalletKitProvider>

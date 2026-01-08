@@ -2,7 +2,7 @@ import { useRef, useState, useCallback, useEffect } from 'react';
 import { GameState } from '@/types/game';
 import { getPosition } from '@/utils/canvasUtils';
 
-const SCRATCH_PERCENTAGE_THRESHOLD = 0.7; // %70
+const SCRATCH_PERCENTAGE_THRESHOLD = 1.0; // %100 - Full scratch required
 
 export const useScratch = (
   canvasRef: React.RefObject<HTMLCanvasElement>,
@@ -92,11 +92,12 @@ export const useScratch = (
         const scratchedPercentage = scratchedPixels.current / totalPixels.current;
 
         if (scratchedPercentage >= SCRATCH_PERCENTAGE_THRESHOLD) {
-          // Clear entire canvas to reveal all
+          // Clear entire canvas to reveal all (100% scratched)
           ctx.save();
           ctx.setTransform(1, 0, 0, 1, 0, 0);
           ctx.clearRect(0, 0, canvas.width, canvas.height);
           ctx.restore();
+          // Automatically reveal and claim winnings
           onReveal();
         }
         (window as any).lastScratchCheck = now;

@@ -27,7 +27,6 @@ export const generateGrid = (selectedMode: GameMode): { grid: GridSymbol[]; winD
     // Weighted selection based on available symbols
     const getWeightedSymbol = (): string => {
       const rand = Math.random();
-      const totalSymbols = winningKeys.length;
       // DIAMOND has lower chance, others have equal chance
       if (winningKeys.includes('DIAMOND')) {
         if (rand < 0.1) return 'DIAMOND'; // 10% chance

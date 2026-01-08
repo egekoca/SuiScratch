@@ -18,6 +18,10 @@ interface GameCardProps {
   purchaseError?: string | null;
   claimLoading?: boolean;
   claimError?: string | null;
+  toast?: {
+    error: (message: string) => void;
+    warning: (message: string) => void;
+  };
 }
 
 export const GameCard = ({
@@ -32,6 +36,7 @@ export const GameCard = ({
   purchaseError = null,
   claimLoading = false,
   claimError = null,
+  toast,
 }: GameCardProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -42,26 +47,26 @@ export const GameCard = ({
 
   const handleBuyTicket = () => {
     if (!isConnected) {
-      alert('Please connect your wallet to play!');
+      toast?.warning('Please connect your wallet to play!');
       return;
     }
     onBuyTicket();
   };
 
-  const handleInstantReveal = () => {
-    if (canvasRef.current && gameState === 'PLAYING') {
-      // Clear the canvas immediately
-      const ctx = canvasRef.current.getContext('2d');
-      if (ctx) {
-        ctx.save();
-        ctx.setTransform(1, 0, 0, 1, 0, 0);
-        ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-        ctx.restore();
-      }
-      // Trigger reveal
-      onReveal();
-    }
-  };
+      const handleInstantReveal = () => {
+        if (canvasRef.current && gameState === 'PLAYING') {
+          // Clear the canvas immediately to 100%
+          const ctx = canvasRef.current.getContext('2d');
+          if (ctx) {
+            ctx.save();
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+            ctx.restore();
+          }
+          // Trigger reveal (will automatically claim winnings if won)
+          onReveal();
+        }
+      };
 
   useEffect(() => {
     if (gameState === 'PLAYING' && canvasRef.current) {
