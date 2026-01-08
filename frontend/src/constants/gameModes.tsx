@@ -7,8 +7,9 @@ export const GAME_MODES: Record<string, GameMode> = {
     name: 'Sui Blue',
     gridSize: 3,
     price: 1, // Testnet: 1 SUI
-    // Balanced payouts: 1 SUI ticket, payouts are multipliers of ticket price
-    // Min win: ~0.10 SUI, Max win: ~3.6 SUI
+    // Payouts: Each symbol has a baseValue per match, multiplied by match count
+    // Example: 3x DIAMOND = 3 * 0.5 = 1.5 SUI, 4x DIAMOND = 4 * 0.5 = 2.0 SUI
+    // This field is kept for backward compatibility but not used in calculation
     payouts: { 3: 0.14, 4: 0.2, 5: 0.3, 6: 0.5, 7: 0.8, 8: 1.6, 9: 3.6 },
     matchReq: 3,
     icon: <Droplet size={18} />,
@@ -21,10 +22,9 @@ export const GAME_MODES: Record<string, GameMode> = {
     name: 'Royal Gold',
     gridSize: 4,
     price: 2, // Testnet: 2 SUI
-    // Balanced payouts: 2 SUI ticket
-    // Formula: winVal = baseValue * price * multiplier
-    // Min win: DIAMOND (1.0) * 2 * 0.07 = 0.14 SUI (3 match) - similar to STANDARD
-    // Max win: DIAMOND (1.0) * 2 * 1.8 = 3.6 SUI (16 match) - same as STANDARD max
+    // Payouts: Each symbol has a baseValue per match, multiplied by match count
+    // Example: 5x DIAMOND = 5 * 0.5 = 2.5 SUI, 6x DIAMOND = 6 * 0.5 = 3.0 SUI
+    // This field is kept for backward compatibility but not used in calculation
     payouts: { 3: 0.07, 4: 0.1, 5: 0.15, 6: 0.25, 7: 0.4, 8: 0.8, 9: 1.0, 10: 1.2, 11: 1.4, 12: 1.5, 13: 1.6, 14: 1.7, 15: 1.75, 16: 1.8 },
     matchReq: 5,
     icon: <Crown size={18} />,
@@ -37,10 +37,9 @@ export const GAME_MODES: Record<string, GameMode> = {
     name: 'Cyber Punk',
     gridSize: 5,
     price: 5, // Testnet: 5 SUI
-    // Balanced payouts: 5 SUI ticket
-    // Formula: winVal = baseValue * price * multiplier
-    // Min win: DIAMOND (1.0) * 5 * 0.028 = 0.14 SUI (3 match) - similar to STANDARD
-    // Max win: DIAMOND (1.0) * 5 * 0.72 = 3.6 SUI (25 match) - same as STANDARD max
+    // Payouts: Each symbol has a baseValue per match, multiplied by match count
+    // Example: 6x DIAMOND = 6 * 0.5 = 3.0 SUI, 7x DIAMOND = 7 * 0.5 = 3.5 SUI
+    // This field is kept for backward compatibility but not used in calculation
     payouts: { 3: 0.028, 4: 0.04, 5: 0.06, 6: 0.1, 7: 0.16, 8: 0.32, 9: 0.4, 10: 0.48, 11: 0.56, 12: 0.6, 13: 0.64, 14: 0.68, 15: 0.7, 16: 0.72, 17: 0.72, 18: 0.72, 19: 0.72, 20: 0.72, 21: 0.72, 22: 0.72, 23: 0.72, 24: 0.72, 25: 0.72 },
     matchReq: 6,
     icon: <Zap size={18} />,

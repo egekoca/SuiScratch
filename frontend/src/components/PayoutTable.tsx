@@ -61,19 +61,24 @@ export const PayoutTable = ({ selectedMode }: PayoutTableProps) => {
                     {sym.label}
                   </span>
                   <span className="text-[10px] text-slate-500">
-                    {selectedMode.matchReq}x: {(() => {
-                      const val = sym.baseValue * selectedMode.price * (selectedMode.payouts[selectedMode.matchReq] || 0);
-                      return val % 1 === 0 ? val.toFixed(0) : val.toFixed(2);
-                    })()} SUI
+                    {(() => {
+                      // New system: baseValue * matchCount
+                      const val = sym.baseValue * selectedMode.matchReq;
+                      const formatted = val % 1 === 0 ? val.toFixed(0) : val.toFixed(2);
+                      return `${selectedMode.matchReq}x: ${formatted} SUI`;
+                    })()}
                   </span>
                 </div>
               </div>
               <div className="text-right">
                 <span className="font-mono text-xs font-bold text-white opacity-80">
-                  Max {(() => {
-                    const val = sym.baseValue * selectedMode.price * Math.max(...Object.values(selectedMode.payouts));
-                    return val % 1 === 0 ? val.toFixed(0) : val.toFixed(2);
-                  })()} SUI
+                  {(() => {
+                    // New system: baseValue * maxMatches (gridSize^2)
+                    const maxMatches = selectedMode.gridSize * selectedMode.gridSize;
+                    const val = sym.baseValue * maxMatches;
+                    const formatted = val % 1 === 0 ? val.toFixed(0) : val.toFixed(2);
+                    return `Max ${formatted} SUI`;
+                  })()}
                 </span>
               </div>
             </div>

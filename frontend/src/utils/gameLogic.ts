@@ -52,29 +52,17 @@ export const generateGridFromContract = (selectedMode: GameMode, symbolIds: numb
   const winDetails: string[] = [];
 
   Object.entries(counts).forEach(([id, count]) => {
-    const payoutKeys = Object.keys(selectedMode.payouts)
-      .map(Number)
-      .sort((a, b) => b - a);
-    let multiplier = 0;
-    let matchedKey = 0;
-
-    for (const k of payoutKeys) {
-      if (count >= k) {
-        multiplier = selectedMode.payouts[k];
-        matchedKey = k;
-        break;
-      }
-    }
-
-    if (multiplier > 0) {
+    // Check if count meets minimum match requirement
+    if (count >= selectedMode.matchReq) {
       const sym = BASE_SYMBOLS[id];
-      // baseValue is a percentage of ticket price, so multiply by ticket price and multiplier
-      const winVal = sym.baseValue * selectedMode.price * multiplier;
+      // Simple calculation: baseValue (per match) * count (number of matches)
+      // Each symbol has a fixed price per match, and we multiply by the number of matches
+      const winVal = sym.baseValue * count;
       totalWinAmount += winVal;
       calculatedWinners.push(id);
       // Format with up to 2 decimal places, but show decimals only if needed
       const formattedVal = winVal % 1 === 0 ? winVal.toFixed(0) : winVal.toFixed(2);
-      winDetails.push(`${matchedKey}x ${sym.label} (${formattedVal} SUI)`);
+      winDetails.push(`${count}x ${sym.label} (${formattedVal} SUI)`);
     }
   });
 

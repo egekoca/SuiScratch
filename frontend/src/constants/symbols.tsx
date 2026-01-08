@@ -25,43 +25,43 @@ export const BASE_SYMBOLS: Record<string, Symbol> = {
   DIAMOND: {
     id: 'DIAMOND',
     icon: createIcon(Gem, 'text-purple-500', 2.5, 'fill-purple-500'),
-    baseValue: 1.0, // 100% of ticket price for 3 matches
+    baseValue: 0.5, // 0.5 SUI per match (e.g., 3x = 1.5 SUI, 4x = 2.0 SUI, 5x = 2.5 SUI)
     label: 'MEGA',
   },
   DROP: {
     id: 'DROP',
     icon: createIcon(Droplet, 'text-blue-500', 2.5, 'fill-blue-500'),
-    baseValue: 0.5, // 50% of ticket price for 3 matches
+    baseValue: 0.25, // 0.25 SUI per match (e.g., 3x = 0.75 SUI, 4x = 1.0 SUI, 5x = 1.25 SUI)
     label: 'SUPER',
   },
   ROCKET: {
     id: 'ROCKET',
     icon: createIcon(Rocket, 'text-orange-500', 2.5, 'fill-orange-500'),
-    baseValue: 0.2, // 20% of ticket price for 3 matches
+    baseValue: 0.1, // 0.1 SUI per match (e.g., 3x = 0.3 SUI, 4x = 0.4 SUI, 5x = 0.5 SUI)
     label: 'BIG',
   },
   COIN: {
     id: 'COIN',
     icon: createIcon(Coins, 'text-yellow-500', 2.5, 'fill-yellow-500'),
-    baseValue: 0.08, // 8% of ticket price for 3 matches
+    baseValue: 0.05, // 0.05 SUI per match (e.g., 3x = 0.15 SUI, 4x = 0.2 SUI, 5x = 0.25 SUI)
     label: 'WIN',
   },
   STAR: {
     id: 'STAR',
     icon: createIcon(Star, 'text-pink-500', 2.5, 'fill-pink-500'),
-    baseValue: 0.15, // 15% of ticket price for 3 matches
+    baseValue: 0.15, // 0.15 SUI per match (e.g., 3x = 0.45 SUI, 4x = 0.6 SUI, 5x = 0.75 SUI)
     label: 'ULTRA',
   },
   CROWN: {
     id: 'CROWN',
     icon: createIcon(Crown, 'text-amber-500', 2.5, 'fill-amber-500'),
-    baseValue: 0.3, // 30% of ticket price for 3 matches
+    baseValue: 0.2, // 0.2 SUI per match (e.g., 3x = 0.6 SUI, 4x = 0.8 SUI, 5x = 1.0 SUI)
     label: 'LEGEND',
   },
   SPARKLES: {
     id: 'SPARKLES',
     icon: createIcon(Sparkles, 'text-cyan-500', 2.5, 'fill-cyan-500'),
-    baseValue: 0.25, // 25% of ticket price for 3 matches
+    baseValue: 0.18, // 0.18 SUI per match (e.g., 3x = 0.54 SUI, 4x = 0.72 SUI, 5x = 0.9 SUI)
     label: 'EPIC',
   },
   GHOST: {

@@ -5,6 +5,7 @@ import { getGridClass, getSymbolSizeClass } from '@/utils/gridUtils';
 import { initCanvas } from '@/utils/canvasUtils';
 import { useScratch } from '@/hooks/useScratch';
 import { useWalletKit } from '@mysten/wallet-kit';
+import { BASE_SYMBOLS, STANDARD_SYMBOLS, GOLD_SYMBOLS, PLATINUM_SYMBOLS } from '@/constants/symbols';
 
 interface GameCardProps {
   selectedMode: GameMode;
@@ -225,8 +226,25 @@ export const GameCard = ({
                     Max Win:{' '}
                     <span className="text-white">
                       {(() => {
-                        const maxPayout = Math.max(...Object.values(selectedMode.payouts));
-                        return maxPayout % 1 === 0 ? maxPayout.toFixed(0) : maxPayout.toFixed(2);
+                        // New system: Find highest baseValue symbol and multiply by max matches
+                        let symbolKeys: string[];
+                        if (selectedMode.id === 'STANDARD') {
+                          symbolKeys = STANDARD_SYMBOLS;
+                        } else if (selectedMode.id === 'GOLD') {
+                          symbolKeys = GOLD_SYMBOLS;
+                        } else {
+                          symbolKeys = PLATINUM_SYMBOLS;
+                        }
+                        
+                        // Find highest baseValue
+                        const maxBaseValue = Math.max(
+                          ...symbolKeys.map(key => BASE_SYMBOLS[key].baseValue)
+                        );
+                        
+                        // Max matches = gridSize^2
+                        const maxMatches = selectedMode.gridSize * selectedMode.gridSize;
+                        const maxWin = maxBaseValue * maxMatches;
+                        return maxWin % 1 === 0 ? maxWin.toFixed(0) : maxWin.toFixed(2);
                       })()} SUI
                     </span>
                   </span>
